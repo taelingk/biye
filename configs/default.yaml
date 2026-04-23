@@ -1,0 +1,21 @@
+project:
+  name: cardiofit
+  seed: 42
+
+data:
+  raw_dir: data/raw
+  processed_dir: data/processed
+  splits_dir: data/splits
+
+training:
+  batch_size: 32
+  num_workers: 4
+  max_epochs: 100
+  learning_rate: 0.001
+
+model:
+  fusion: mid
+  use_ecg: true
+  use_ppg: true
+  use_scg: true
+  use_demographics: true

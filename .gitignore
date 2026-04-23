@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual env
+.venv/
+venv/
+env/
+
+# Tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.DS_Store
+.idea/
+.vscode/
+
+# Project data (no raw/processed dataset in git)
+data/raw/
+data/processed/
+data/splits/
+data/features/
+
+# Training artifacts
+runs/
+checkpoints/
+wandb/
+figures/
+logs/
+
+# Local env files
+.env
+.env.*

@@ -1,0 +1,10 @@
+defaults:
+  - /default
+
+experiment:
+  name: vo2max_multimodal
+  target: vo2max
+
+training:
+  max_epochs: 150
+  learning_rate: 0.0003

@@ -1,0 +1,50 @@
+[project]
+name = "cardiofit"
+version = "0.1.0"
+description = "Multimodal wearable cardiopulmonary assessment system (ECG + PPG + SCG)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "torch>=2.0",
+  "pytorch-lightning>=2.0",
+  "torchmetrics",
+  "numpy",
+  "pandas",
+  "scipy",
+  "h5py",
+  "scikit-learn",
+  "neurokit2",
+  "biosppy",
+  "heartpy",
+  "wfdb",
+  "xgboost",
+  "lightgbm",
+  "matplotlib",
+  "seaborn",
+  "plotly",
+  "wandb",
+  "omegaconf",
+  "hydra-core",
+  "tqdm",
+  "click",
+  "pytest",
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"
