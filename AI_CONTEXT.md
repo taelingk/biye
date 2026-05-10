@@ -21,13 +21,18 @@
 
 | Phase | 状态 | 负责人 | 分支 |
 |-------|------|--------|------|
-| 1. 环境搭建 | in_progress | — | — |
-| 2. 预处理 | pending | — | — |
-| 3. 数据加载 | pending | — | — |
-| 4. 模型定义 | pending | — | — |
-| 5. 训练脚本 | pending | — | — |
-| 6. 评估管道 | pending | — | — |
-| 7. ONNX导出 | pending | — | — |
+| 1. 环境搭建 | ✅ done | claude-code | feat/core-pipeline |
+| 2. 预处理 | ✅ done | claude-code | feat/core-pipeline |
+| 3. 数据加载 | ✅ done | claude-code | feat/core-pipeline |
+| 4. 模型定义 | ✅ done | claude-code | feat/core-pipeline |
+| 5. 训练脚本 | ✅ done | claude-code | feat/core-pipeline |
+| 6. 评估管道 | ✅ done | claude-code | feat/core-pipeline |
+| 7. ONNX导出 | ✅ done | claude-code | feat/core-pipeline |
+| 8. 验证可运行 | 🔄 in_progress | claude-code | feat/core-pipeline |
+| 9. 真实数据训练 | ⏳ free | — | — |
+| 10. 模型调优 | ⏳ free | — | — |
+
+> 协作约定：见 `.tasks.yaml`。三端（Claude Code / Codex / Antigravity）认领任务前先检查 status，in_progress 的跳过，done 的跳过。
 
 ## 架构决策记录
 
