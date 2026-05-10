@@ -100,16 +100,19 @@ tasks:
   - id: phase8-verify
     phase: 8
     name: 验证代码可运行
-    status: in_progress
+    status: done
     handler: claude-code
     branch: feat/core-pipeline
     started: 2026-05-10
+    completed: 2026-05-10
     depends_on:
       - phase5-training
       - phase6-evaluation
     files_touched:
       - tests/
-    note: 安装依赖 + 跑单元测试 + mock 数据验证
+      - scripts/verify_pipeline.py
+      - src/cardiofit/utils/__init__.py
+    note: 合成数据全管线测试通过。Mac CPU 模式可用，tensorflow-metal 不兼容已卸载
 
   - id: phase9-train
     phase: 9
