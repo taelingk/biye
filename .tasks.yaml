@@ -1,0 +1,88 @@
+# CardioFit 任务认领表
+# 任何工具/人开始干活前先认领，干完打 done
+# 发现 in_progress 就跳过，防止冲突
+
+tasks:
+  - id: phase1-setup
+    phase: 1
+    name: 环境搭建
+    status: in_progress
+    handler: claude-code
+    branch: feat/environment-setup
+    started: 2026-05-09
+    files_touched:
+      - requirements-mac.txt
+      - requirements-wsl.txt
+      - configs/default.yaml
+      - AI_CONTEXT.md
+      - .tasks.yaml
+
+  - id: phase2-preprocessing
+    phase: 2
+    name: 预处理管道
+    status: free
+    handler: ~
+    branch: ~
+    depends_on: phase1-setup
+    files_touched:
+      - src/cardiofit/preprocessing/
+      - scripts/build_preprocessed_dataset.py
+
+  - id: phase3-dataset
+    phase: 3
+    name: 数据加载管道
+    status: free
+    handler: ~
+    branch: ~
+    depends_on: phase2-preprocessing
+    files_touched:
+      - src/cardiofit/dataset/
+      - data/splits/
+
+  - id: phase4-model
+    phase: 4
+    name: 模型定义
+    status: free
+    handler: ~
+    branch: ~
+    depends_on: phase1-setup
+    files_touched:
+      - src/cardiofit/models/
+    note: 与 Phase 3 无依赖冲突，可并行
+
+  - id: phase5-training
+    phase: 5
+    name: 训练脚本
+    status: free
+    handler: ~
+    branch: ~
+    depends_on:
+      - phase3-dataset
+      - phase4-model
+    files_touched:
+      - src/cardiofit/training/
+      - scripts/train_multimodal.py
+      - outputs/
+
+  - id: phase6-evaluation
+    phase: 6
+    name: 评估管道
+    status: free
+    handler: ~
+    branch: ~
+    depends_on: phase5-training
+    files_touched:
+      - src/cardiofit/evaluation/
+      - scripts/evaluate_multimodal.py
+
+  - id: phase7-export
+    phase: 7
+    name: ONNX导出 + 文档
+    status: free
+    handler: ~
+    branch: ~
+    depends_on: phase6-evaluation
+    files_touched:
+      - scripts/export_onnx.py
+      - README.md
+      - ROADMAP.md
