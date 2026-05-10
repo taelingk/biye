@@ -1,21 +1,97 @@
-project:
-  name: cardiofit
-  seed: 42
+# CardioFit — 默认配置
+# 所有路径相对于项目根目录 (中期CO/)
+# 跨平台: Mac / Windows WSL2 通用，不硬编码绝对路径
 
-data:
-  raw_dir: data/raw
-  processed_dir: data/processed
-  splits_dir: data/splits
+project:
+  name: CardioFit
+  seed: 42
+  version: "0.2.0"
+
+paths:
+  raw_data: data/raw
+  processed_data: data/processed
+  splits: data/splits
+  checkpoints: outputs/checkpoints
+  logs: outputs/logs
+  onnx: outputs/onnx
+
+signal:
+  sampling_rate_target: 125  # 统一重采样目标 (Hz)
+  window_size: 125           # 窗口样本数 (1秒)
+  window_before_r: 40        # R 峰前样本数
+  window_after_r: 85         # R 峰后样本数
+  channels: 3                # [ECG, PPG_IR, SCG_z]
+
+  ecg:
+    fs: 500
+    bandpass_low: 0.5
+    bandpass_high: 40.0
+    notch_freq: 50.0
+    notch_q: 30
+
+  ppg:
+    fs: 100
+    bandpass_low: 0.5
+    bandpass_high: 8.0
+    channel_ir: 1            # 红外通道索引 (0-based)
+
+  scg:
+    fs: 800
+    bandpass_low: 1.0
+    bandpass_high: 40.0
+    axis_z: 2                # z 轴索引 (0-based)
+
+clinical_features:
+  # 顺序: [age, gender, weight, height, BSA, BMI, HR, SBP, DBP, PP]
+  names:
+    - age
+    - gender
+    - weight
+    - height
+    - bsa
+    - bmi
+    - hr
+    - sbp
+    - dbp
+    - pp
+  n_features: 10
+
+model:
+  input_shape: [125, 3]      # (window_size, channels)
+  n_clinical: 10
+  lstm_units: 64
+  dense_units: 128
+  dropout: 0.3
+  dropout_shared: 0.2
+  l2_reg: 4.11e-05
+  se_reduction: 8
+  output_names:
+    - co_output
+    - vo2_output
 
 training:
   batch_size: 32
-  num_workers: 4
   max_epochs: 100
   learning_rate: 0.001
+  early_stopping_patience: 20
+  optimizer: adam
+  loss: huber
+  huber_delta: 1.0
+  loss_weights:
+    co_output: 1.0
+    vo2_output: 1.0
+  clipvalue: 1.0
+  augmentation:
+    time_shift_prob: 0.3
+    time_shift_max: 2
+    noise_prob: 0.3
+    noise_std_ratio: 0.05
 
-model:
-  fusion: mid
-  use_ecg: true
-  use_ppg: true
-  use_scg: true
-  use_demographics: true
+data_split:
+  ratios: [0.7, 0.15, 0.15]  # train / val / test
+  stratify_by: [age_group, gender, bmi_group]
+  split_method: per_subject
+
+output:
+  vo2_range: [10, 80]        # VO₂max 合理范围 (mL/kg/min)
+  co_range: [2, 30]          # CO 合理范围 (L/min)
