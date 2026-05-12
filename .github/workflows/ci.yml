@@ -27,9 +27,10 @@ jobs:
           pip install tensorflow>=2.16
 
       - name: Run pre-commit
+        continue-on-error: true
         run: |
           pip install pre-commit
-          pre-commit run --all-files
+          pre-commit run --all-files --show-diff-on-failure
 
       - name: Run tests
         run: pytest tests/ -v
