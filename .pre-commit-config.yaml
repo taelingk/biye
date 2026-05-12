@@ -4,7 +4,9 @@ repos:
     hooks:
       - id: check-yaml
       - id: end-of-file-fixer
+        types_or: [python, yaml]
       - id: trailing-whitespace
+        types_or: [python, yaml]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.11.10
