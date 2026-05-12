@@ -4,32 +4,34 @@
 
 ## 项目简介
 
-基于 PPG + ECG + SCG 多模态信号，使用 ResNet18-SE-LSTM 预测 CO 和 VO₂max。参考论文: 董雪学位论文 (codongxue)。
+基于 PPG + ECG + SCG 多模态信号，使用 TensorFlow/Keras 实现 ResNet18-SE-LSTM 预测 CO 和 VO₂max。
 
-## 与原始 CardioFit 脚手架的关键变更
+## 框架
 
-- **框架**: PyTorch → TensorFlow/Keras (复用论文代码)
-- **架构**: 三独立编码器 + 融合 → 论文单编码器 ResNet18-SE-LSTM
-- **输入**: 三模态分别处理 → 统一重采样 125Hz 堆叠为 (125,3)
-- **工程**: OmegaConf/Hydra → 简单 YAML + pathlib
+> ⚠️ **TensorFlow/Keras** — 禁止引入 PyTorch。
 
 ## 项目结构
 
 ```
-中期CO/
-├── AI_CONTEXT.md                 ← 三端共享上下文 (先读这个!)
-├── .tasks.yaml                   ← 任务认领表
-├── configs/default.yaml          ← 唯一配置文件
+cardiofit/
+├── AI_CONTEXT.md          ← 三端共享上下文 (先读这个!)
+├── AGENTS.md              ← Codex 指引
+├── CLAUDE.md              ← Claude Code 指引 (本文件)
+├── .tasks.yaml            ← 任务调度表 (权威进度来源)
+├── TECHNICAL_DOC.md       ← 技术规格文档
+├── configs/default.yaml   ← 唯一配置文件
 ├── src/cardiofit/
-│   ├── preprocessing/            # ECG/PPG/SCG 处理器
-│   ├── dataset/                  # HDF5 加载 + 数据切分
-│   ├── models/                   # SE Block + ResNet18-SE-LSTM
-│   ├── training/                 # 损失函数 + 回调
-│   └── evaluation/               # 指标 + Bland-Altman
-├── scripts/                      # CLI 入口
-├── outputs/                      # checkpoints, logs, onnx
-├── requirements-mac.txt
-└── requirements-wsl.txt
+│   ├── preprocessing/     # ECG/PPG/SCG 处理器
+│   ├── dataset/           # HDF5 加载 + 数据切分
+│   ├── models/            # SE Block + ResNet18-SE-LSTM
+│   ├── training/          # 损失函数 + 回调
+│   ├── evaluation/        # 指标 + Bland-Altman
+│   ├── features/          # 手工特征工程
+│   └── utils/             # 工具函数
+├── scripts/               # CLI 入口
+├── tests/                 # 测试
+├── requirements-mac.txt   # Mac 依赖
+└── requirements-wsl.txt   # Windows WSL2 依赖
 ```
 
 ## 编码规范
@@ -50,16 +52,18 @@ python scripts/evaluate_multimodal.py --config configs/default.yaml
 
 # 导出 ONNX
 python scripts/export_onnx.py --config configs/default.yaml
+
+# 测试
+pytest tests/ -v
 ```
-
-## 参考代码
-
-- 模型核心: `~/code/codongxue/src/training/train_svco_model.py`
-- 预处理: `~/code/codongxue/src/preprocessing/data_step1.py`
-- ONNX推理: `~/code/codongxue/src/inference/infer_svco_onnx.py`
 
 ## 三端协作
 
-- `.tasks.yaml` 做任务认领 — 开始前先读，改状态为 in_progress
+- `.tasks.yaml` 是任务调度的**权威来源** — 由人类手动分配任务
 - `AI_CONTEXT.md` 做上下文传递 — 启动时先读
-- 按 Phase 切分支 — 一个分支一个 Phase，不绑定工具
+- 不要自行认领 `free` 任务，等人类分配并 `git push` 后再执行
+
+## 参考资源
+
+- 参考论文: 董雪学位论文 — ResNet18-SE-LSTM 架构
+- 项目技术规格: `TECHNICAL_DOC.md`

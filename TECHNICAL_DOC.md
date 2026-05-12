@@ -1,8 +1,9 @@
 # 基于穿戴式多模态生理信号的动态心肺功能评测系统 — 技术文档
 
 > **项目代号**: CardioFit  
-> **版本**: v1.0  
-> **最后更新**: 2025-11  
+> **版本**: v2.0  
+> **框架**: TensorFlow / Keras（禁止 PyTorch）  
+> **最后更新**: 2026-05  
 > **作者**: 郭凌宇 / 北航生物与医学工程学院  
 
 ---
@@ -89,114 +90,63 @@ cardiofit/
 │   │   └── test_subjects.txt
 │   └── README.md                   # 数据字典
 │
-├── src/
+├── src/cardiofit/
 │   ├── __init__.py
 │   │
 │   ├── preprocessing/              # 信号预处理模块
 │   │   ├── __init__.py
-│   │   ├── filters.py              # 带通/陷波/自适应滤波
-│   │   ├── ecg_processor.py        # QRS检测、R峰定位、HRV
-│   │   ├── ppg_processor.py        # PPG特征提取
-│   │   ├── scg_processor.py        # SCG特征点识别 (AO/AC/MC/MO)
-│   │   ├── sync.py                 # 多模态信号时间同步
-│   │   ├── segmentation.py         # 心搏分段
-│   │   ├── quality.py              # 信号质量评估与伪迹剔除
-│   │   └── augmentation.py         # 数据增强
+│   │   ├── ecg_processor.py        # 滤波、R峰检测、重采样至125Hz
+│   │   ├── ppg_processor.py        # 滤波、重采样至125Hz
+│   │   ├── scg_processor.py        # 滤波、选z轴、重采样至125Hz
+│   │   ├── sync_and_segment.py     # R峰对齐 + 窗口提取 → (N,125,3)
+│   │   └── build_hdf5.py           # 单受试者 → HDF5 完整管道
 │   │
-│   ├── features/                   # 特征工程模块
+│   ├── features/                   # 特征工程模块 (基线模型用)
 │   │   ├── __init__.py
-│   │   ├── ecg_features.py         # HR, HRV, QRS duration, ST变异
-│   │   ├── ppg_features.py         # PAT, 脉搏幅度, 血管顺应性
-│   │   ├── scg_features.py         # STI (IVCT/LVET/IVRT), Tei, 幅值, 频域
-│   │   ├── cross_modal.py          # 跨模态特征 (PTT, PEP等)
-│   │   └── demographic.py          # 人口学特征编码
+│   │   ├── ecg_features.py         # HR, HRV, QRS duration
+│   │   ├── ppg_features.py         # PAT, 脉搏幅度, SDPPG
+│   │   ├── scg_features.py         # STI, Tei, 幅值, 频域
+│   │   └── cross_modal.py          # PTT, EMD 跨模态特征
 │   │
 │   ├── dataset/                    # 数据集管理模块
 │   │   ├── __init__.py
-│   │   ├── cardiofit_dataset.py    # PyTorch Dataset 实现
-│   │   ├── dataloader.py           # DataLoader 工厂函数
-│   │   └── transforms.py           # 数据变换/增强 pipeline
+│   │   ├── hdf5_loader.py          # HDF5 加载 → (signals, clinical, co, vo2)
+│   │   ├── data_split.py           # 按受试者切分 train/val/test
+│   │   └── augmentation.py         # 数据增强 (时移、加噪)
 │   │
-│   ├── models/                     # 深度学习模型模块
+│   ├── models/                     # 深度学习模型 (TensorFlow/Keras)
 │   │   ├── __init__.py
-│   │   ├── backbone/
-│   │   │   ├── __init__.py
-│   │   │   ├── ecg_encoder.py      # ECG 1D-CNN 编码器
-│   │   │   ├── ppg_encoder.py      # PPG 1D-CNN 编码器
-│   │   │   ├── scg_encoder.py      # SCG 1D-CNN 编码器
-│   │   │   └── transformer.py      # Transformer/Bi-LSTM 时序编码器
-│   │   ├── fusion/
-│   │   │   ├── __init__.py
-│   │   │   ├── early_fusion.py     # 早期融合 (通道拼接)
-│   │   │   ├── mid_fusion.py       # 中期融合 (注意力加权)
-│   │   │   └── late_fusion.py      # 晚期融合 (决策层加权)
-│   │   ├── heads/
-│   │   │   ├── __init__.py
-│   │   │   ├── vo2max_head.py      # VO₂max 回归头
-│   │   │   └── co_head.py          # CO 回归头
-│   │   ├── cardiofit_net.py        # 主模型 (组装 backbone+fusion+head)
-│   │   └── baselines/
-│   │       ├── __init__.py
-│   │       ├── friend_equation.py  # FRIEND 传统方程基线
-│   │       ├── svm_model.py        # SVM 回归基线
-│   │       ├── xgboost_model.py    # XGBoost 基线
-│   │       └── rf_model.py         # 随机森林基线
+│   │   ├── resnet_se_lstm.py       # 主模型构建函数 + 编译函数
+│   │   ├── se_block.py             # SEBlock + ResidualSEBlock
+│   │   └── standardize_layers.py   # 内置标准化层 (ONNX兼容)
 │   │
 │   ├── training/                   # 训练管理模块
 │   │   ├── __init__.py
-│   │   ├── trainer.py              # 训练循环
-│   │   ├── losses.py               # 损失函数 (MSE, Huber, 混合损失)
-│   │   ├── optimizer.py            # 优化器工厂
-│   │   ├── scheduler.py            # 学习率调度
-│   │   ├── callbacks.py            # 早停、模型保存等回调
-│   │   └── cross_validation.py     # K-fold / LOSO 交叉验证
+│   │   ├── losses.py               # Huber 双任务损失
+│   │   └── callbacks.py            # 早停、模型保存回调
 │   │
 │   ├── evaluation/                 # 评估模块
 │   │   ├── __init__.py
 │   │   ├── metrics.py              # R², RMSE, MAE, MAPE, Pearson r
 │   │   ├── bland_altman.py         # Bland-Altman 一致性分析
-│   │   ├── ablation.py             # 消融实验框架
-│   │   ├── visualization.py        # 结果可视化
-│   │   └── statistical_tests.py    # 统计显著性检验
+│   │   └── visualization.py        # 结果可视化
 │   │
 │   └── utils/
-│       ├── __init__.py
-│       ├── io.py                   # 数据读写工具
-│       ├── logging.py              # 日志配置
-│       ├── reproducibility.py      # 随机种子管理
-│       └── config.py               # 配置文件解析 (OmegaConf)
+│       └── __init__.py             # 种子管理等工具
 │
 ├── scripts/
-│   ├── preprocess_all.py           # 批量预处理脚本
-│   ├── extract_features.py         # 特征提取脚本
-│   ├── train.py                    # 训练入口
-│   ├── evaluate.py                 # 评估入口
-│   ├── ablation_study.py           # 消融实验入口
-│   ├── export_model.py             # 模型导出 (ONNX)
-│   └── visualize_results.py        # 生成论文图表
+│   ├── build_preprocessed_dataset.py  # 批量预处理入口
+│   ├── train_multimodal.py            # 训练入口
+│   ├── evaluate_multimodal.py         # 评估入口
+│   ├── export_onnx.py                 # ONNX 导出
+│   └── verify_pipeline.py             # 全管线验证
 │
-├── notebooks/
-│   ├── 01_data_exploration.ipynb
-│   ├── 02_signal_quality.ipynb
-│   ├── 03_feature_analysis.ipynb
-│   ├── 04_model_comparison.ipynb
-│   └── 05_results_visualization.ipynb
+├── tests/                          # 单元测试
 │
-├── tests/
-│   ├── test_preprocessing.py
-│   ├── test_features.py
-│   ├── test_dataset.py
-│   ├── test_models.py
-│   └── test_metrics.py
+├── configs/
+│   └── default.yaml                # 唯一配置文件
 │
-├── firmware/                       # 嵌入式固件 (可选，参考)
-│   ├── README.md
-│   └── sensor_config.h
-│
-└── docs/
-    ├── data_dictionary.md          # 数据字段说明
-    ├── model_card.md               # 模型卡片
-    └── experiment_log.md           # 实验记录
+└── docs/                           # 分析文档
 ```
 
 ---
@@ -518,260 +468,202 @@ class SignalQualityAssessor:
 
 ## 7. 深度学习模型架构
 
-### 7.1 主模型: CardioFitNet
+> ⚠️ 框架: **TensorFlow / Keras**。以下代码与 `src/cardiofit/models/` 中的实际实现一致。
+
+### 7.1 主模型: ResNet18-SE-LSTM（双输出）
 
 ```
-                         ┌─────────────────────┐
-                         │    Demographics      │
-                         │  (age,sex,BMI,...)   │
-                         │    MLP Encoder       │
-                         └──────────┬──────────┘
-                                    │
-     ┌────────────┐  ┌────────────┐ │ ┌────────────┐
-     │ ECG Input  │  │ PPG Input  │ │ │ SCG Input  │
-     │ (1, L_ecg) │  │ (2, L_ppg) │ │ │ (3, L_scg) │
-     └─────┬──────┘  └─────┬──────┘ │ └─────┬──────┘
-           │               │        │       │
-     ┌─────▼──────┐  ┌─────▼──────┐ │ ┌─────▼──────┐
-     │ 1D-CNN     │  │ 1D-CNN     │ │ │ 1D-CNN     │
-     │ Encoder    │  │ Encoder    │ │ │ Encoder    │
-     │ (ResBlock) │  │ (ResBlock) │ │ │ (ResBlock) │
-     └─────┬──────┘  └─────┬──────┘ │ └─────┬──────┘
-           │               │        │       │
-     ┌─────▼──────┐  ┌─────▼──────┐ │ ┌─────▼──────┐
-     │ Bi-LSTM /  │  │ Bi-LSTM /  │ │ │ Bi-LSTM /  │
-     │ Transformer│  │ Transformer│ │ │ Transformer│
-     └─────┬──────┘  └─────┬──────┘ │ └─────┬──────┘
-           │               │        │       │
-           └───────┬───────┘        │       │
-                   │                │       │
-           ┌───────▼────────────────▼───────▼──┐
-           │      Multi-Modal Fusion Layer      │
-           │   (Attention / Concat / Weighted)  │
-           └───────────────┬───────────────────┘
-                           │
-                    ┌──────▼──────┐
-                    │   Shared    │
-                    │   FC Layers │
-                    └──────┬──────┘
-                           │
-              ┌────────────┼────────────┐
-              │                         │
-        ┌─────▼─────┐            ┌─────▼─────┐
-        │VO₂max Head│            │  CO Head   │
-        │ (Regress) │            │ (Regress)  │
-        └───────────┘            └────────────┘
+Signal (None, 125, 3)                Clinical (None, 10)
+  [ECG, PPG_IR, SCG_z]              [age,sex,weight,height,BSA,BMI,HR,SBP,DBP,PP]
+        │                                    │
+        ▼                                    ▼
+  StandardizeSignalFlat              StandardizeClinical
+        │                                    │
+        ▼                                    │
+  Conv1D(64, 7, s=2) → BN → ReLU            │
+        │                                    │
+        ▼                                    │
+  ResidualSEBlock × 2 (64 filters)           │
+        │                                    │
+        ▼                                    │
+  ResidualSEBlock × 2 (128 filters, s=2)     │
+        │                                    │
+        ▼                                    │
+  ResidualSEBlock × 2 (256 filters, s=2)     │
+        │                                    │
+        ▼                                    │
+  ResidualSEBlock × 1 (512 filters)          │
+        │                                    │
+        ▼                                    │
+  LSTM(64)                                   │
+        │                                    │
+        ▼                                    │
+  Dense(128, relu) + Dropout(0.3)            │
+        │                                    │
+        └──────── Concatenate ───────────────┘
+                       │
+                       ▼
+                Dense(64, relu) + Dropout(0.2)
+                       │
+              ┌────────┼────────┐
+              ▼                 ▼
+        Dense(1)          Dense(1)
+        co_output         vo2_output
 ```
 
 ### 7.2 模块详细设计
 
-#### 7.2.1 单模态编码器 (1D-CNN + Sequential)
+#### 7.2.1 SE 通道注意力模块 (`se_block.py`)
 
 ```python
-class SignalEncoder(nn.Module):
-    """通用的单模态信号编码器"""
+class SEBlock(Layer):
+    """Squeeze-and-Excitation 通道注意力 (参考董雪论文)
     
-    def __init__(self, 
-                 in_channels: int,        # ECG=1, PPG=2, SCG=3
-                 base_filters: int = 64,
-                 n_res_blocks: int = 4,
-                 seq_model: str = "bilstm",  # "bilstm" | "transformer"
-                 hidden_dim: int = 128,
-                 output_dim: int = 128):
-        super().__init__()
-        
-        # Stage 1: 1D-CNN 局部特征提取
-        self.cnn = nn.Sequential(
-            ResBlock1D(in_channels, base_filters, kernel_size=15, stride=2),
-            ResBlock1D(base_filters, base_filters*2, kernel_size=9, stride=2),
-            ResBlock1D(base_filters*2, base_filters*4, kernel_size=5, stride=2),
-            ResBlock1D(base_filters*4, hidden_dim, kernel_size=3, stride=2),
-        )
-        
-        # Stage 2: 时序建模
-        if seq_model == "bilstm":
-            self.seq = nn.LSTM(hidden_dim, hidden_dim//2, 
-                              num_layers=2, bidirectional=True, 
-                              batch_first=True, dropout=0.3)
-        elif seq_model == "transformer":
-            encoder_layer = nn.TransformerEncoderLayer(
-                d_model=hidden_dim, nhead=8, 
-                dim_feedforward=256, dropout=0.1
-            )
-            self.seq = nn.TransformerEncoder(encoder_layer, num_layers=4)
-        
-        # Stage 3: 全局池化 → 嵌入
-        self.pool = nn.AdaptiveAvgPool1d(1)
-        self.proj = nn.Linear(hidden_dim, output_dim)
-    
-    def forward(self, x):
-        # x: (B, C, L)
-        h = self.cnn(x)           # (B, hidden_dim, L')
-        h = h.permute(0, 2, 1)    # (B, L', hidden_dim)
-        h, _ = self.seq(h)        # (B, L', hidden_dim)
-        h = h.permute(0, 2, 1)    # (B, hidden_dim, L')
-        h = self.pool(h).squeeze(-1)  # (B, hidden_dim)
-        return self.proj(h)       # (B, output_dim)
+    GlobalAveragePooling → Dense(C//r, relu) → Dense(C, sigmoid) → channel-wise multiply
+    """
+    def __init__(self, reduction_ratio: int = 8, **kwargs):
+        super().__init__(**kwargs)
+        self.reduction_ratio = reduction_ratio
+
+    def build(self, input_shape):
+        channels = input_shape[-1]
+        self.squeeze = GlobalAveragePooling1D()
+        self.excitation1 = Dense(channels // self.reduction_ratio, activation="relu")
+        self.excitation2 = Dense(channels, activation="sigmoid")
+
+    def call(self, inputs):
+        x = self.squeeze(inputs)
+        x = self.excitation1(x)
+        x = self.excitation2(x)
+        x = Reshape((1, -1))(x)
+        return Multiply()([inputs, x])
 ```
 
-#### 7.2.2 ResBlock1D
+#### 7.2.2 残差 SE 块 (`se_block.py`)
 
 ```python
-class ResBlock1D(nn.Module):
-    def __init__(self, in_ch, out_ch, kernel_size=7, stride=1):
-        super().__init__()
-        padding = kernel_size // 2
-        self.conv1 = nn.Conv1d(in_ch, out_ch, kernel_size, stride, padding)
-        self.bn1 = nn.BatchNorm1d(out_ch)
-        self.conv2 = nn.Conv1d(out_ch, out_ch, kernel_size, 1, padding)
-        self.bn2 = nn.BatchNorm1d(out_ch)
-        self.relu = nn.ReLU(inplace=True)
-        self.dropout = nn.Dropout(0.2)
-        
-        self.shortcut = nn.Sequential(
-            nn.Conv1d(in_ch, out_ch, 1, stride),
-            nn.BatchNorm1d(out_ch)
-        ) if in_ch != out_ch or stride != 1 else nn.Identity()
+class ResidualSEBlock(Layer):
+    """ResNet 残差块 + SE 注意力
     
-    def forward(self, x):
-        residual = self.shortcut(x)
-        out = self.relu(self.bn1(self.conv1(x)))
-        out = self.dropout(out)
-        out = self.bn2(self.conv2(out))
-        return self.relu(out + residual)
+    Conv1D(3,s) → BN → ReLU → Conv1D(3,1) → BN → SE → Add → ReLU
+    可选 1×1 conv shortcut 用于维度匹配
+    """
+    def __init__(self, filters, stride=1, use_1x1_conv=False, 
+                 kernel_regularizer=None, **kwargs):
+        super().__init__(**kwargs)
+        self.conv1 = Conv1D(filters, 3, padding="same", strides=stride,
+                           kernel_regularizer=kernel_regularizer)
+        self.bn1 = BatchNormalization()
+        self.conv2 = Conv1D(filters, 3, padding="same",
+                           kernel_regularizer=kernel_regularizer)
+        self.bn2 = BatchNormalization()
+        self.se = SEBlock()
+        
+        self.shortcut_conv = None
+        if use_1x1_conv:
+            self.shortcut_conv = Conv1D(filters, 1, strides=stride,
+                                       kernel_regularizer=kernel_regularizer)
+            self.shortcut_bn = BatchNormalization()
+
+    def call(self, inputs):
+        x = Activation("relu")(self.bn1(self.conv1(inputs)))
+        x = self.bn2(self.conv2(x))
+        x = self.se(x)
+        
+        if self.shortcut_conv is not None:
+            shortcut = self.shortcut_bn(self.shortcut_conv(inputs))
+        else:
+            shortcut = inputs
+        return Activation("relu")(x + shortcut)
 ```
 
-#### 7.2.3 融合策略
+#### 7.2.3 主模型构建函数 (`resnet_se_lstm.py`)
 
 ```python
-class AttentionFusion(nn.Module):
-    """中期融合: 多头注意力加权融合"""
-    
-    def __init__(self, embed_dim: int = 128, n_modalities: int = 3):
-        super().__init__()
-        self.attention = nn.MultiheadAttention(embed_dim, num_heads=4)
-        self.norm = nn.LayerNorm(embed_dim)
-        self.fc = nn.Linear(embed_dim * n_modalities, embed_dim)
-    
-    def forward(self, ecg_emb, ppg_emb, scg_emb):
-        # 堆叠为序列: (3, B, D)
-        tokens = torch.stack([ecg_emb, ppg_emb, scg_emb], dim=0)
-        attn_out, weights = self.attention(tokens, tokens, tokens)
-        attn_out = self.norm(attn_out + tokens)
-        # 拼接融合
-        fused = attn_out.permute(1, 0, 2).reshape(-1, ecg_emb.size(1) * 3)
-        return self.fc(fused), weights
+def build_multimodal_resnet_se_lstm(
+    input_shape: tuple[int, int] = (125, 3),
+    n_clinical: int = 10,
+    l2_reg: float = 4.11e-05,
+    dropout: float = 0.3,
+    dropout_shared: float = 0.2,
+    dense_units: int = 128,
+    lstm_units: int = 64,
+    se_reduction: int = 8,
+    signal_mean=None, signal_scale=None,
+    clinical_mean=None, clinical_scale=None,
+) -> tf.keras.Model:
+    """构建 ResNet18-SE-LSTM 双输出模型（内置标准化层）
 
+    输入:
+        signal_input: (None, 125, 3)  — [ECG, PPG_IR, SCG_z] 三通道堆叠
+        clinical_input: (None, 10)    — 10维临床参数
 
-class EarlyFusion(nn.Module):
-    """早期融合: 输入层通道拼接"""
-    
-    def __init__(self, ecg_len, ppg_len, scg_len, target_len=2000):
-        super().__init__()
-        # 将不同长度信号重采样到统一长度后按通道拼接
-        # ECG: 1ch, PPG: 2ch, SCG: 3ch → 总共 6 通道
-        self.resample_target = target_len
-    
-    def forward(self, ecg, ppg, scg):
-        # 重采样到统一长度
-        ecg_r = F.interpolate(ecg, self.resample_target)
-        ppg_r = F.interpolate(ppg, self.resample_target)
-        scg_r = F.interpolate(scg, self.resample_target)
-        return torch.cat([ecg_r, ppg_r, scg_r], dim=1)  # (B, 6, L)
+    输出:
+        co_output: (None, 1)   — 心输出量预测
+        vo2_output: (None, 1)  — VO₂max 预测
+    """
+    signal_input = Input(shape=input_shape, name="signal_input")
+    clinical_input = Input(shape=(n_clinical,), name="clinical_input")
 
+    # --- 内置标准化 (ONNX 导出时自包含) ---
+    x = StandardizeSignalFlat(...)(signal_input)
+    clin_std = StandardizeClinical(...)(clinical_input)
 
-class LateFusion(nn.Module):
-    """晚期融合: 决策层自适应加权"""
-    
-    def __init__(self, embed_dim: int = 128, n_modalities: int = 3):
-        super().__init__()
-        self.weight_net = nn.Sequential(
-            nn.Linear(embed_dim * n_modalities, 64),
-            nn.ReLU(),
-            nn.Linear(64, n_modalities),
-            nn.Softmax(dim=-1)
-        )
-    
-    def forward(self, ecg_emb, ppg_emb, scg_emb):
-        combined = torch.cat([ecg_emb, ppg_emb, scg_emb], dim=-1)
-        weights = self.weight_net(combined)  # (B, 3)
-        stacked = torch.stack([ecg_emb, ppg_emb, scg_emb], dim=1)  # (B, 3, D)
-        fused = (stacked * weights.unsqueeze(-1)).sum(dim=1)  # (B, D)
-        return fused, weights
+    # --- ResNet18 骨干 ---
+    x = Conv1D(64, 7, strides=2, padding="same", name="conv1")(x)
+    x = BatchNormalization()(x)
+    x = Activation("relu")(x)
+
+    for i in range(2):
+        x = ResidualSEBlock(64, name=f"res_se_64_{i}")(x)
+
+    x = ResidualSEBlock(128, stride=2, use_1x1_conv=True)(x)
+    x = ResidualSEBlock(128)(x)
+
+    x = ResidualSEBlock(256, stride=2, use_1x1_conv=True)(x)
+    x = ResidualSEBlock(256)(x)
+
+    x = ResidualSEBlock(512, stride=1, use_1x1_conv=True)(x)
+
+    # --- LSTM 时序建模 ---
+    x = LSTM(lstm_units, return_sequences=False)(x)
+
+    # --- 特征层 ---
+    x = Dense(dense_units, activation="relu")(x)
+    x = Dropout(dropout)(x)
+
+    # --- 拼接临床特征 ---
+    x = Concatenate()([x, clin_std])  # (None, 138)
+
+    # --- 共享层 ---
+    x = Dense(64, activation="relu")(x)
+    x = Dropout(dropout_shared)(x)
+
+    # --- 双输出头 ---
+    co_output = Dense(1, name="co_output")(x)
+    vo2_output = Dense(1, name="vo2_output")(x)
+
+    return Model(inputs=[signal_input, clinical_input],
+                 outputs=[co_output, vo2_output],
+                 name="resnet18_se_lstm_multimodal")
 ```
 
-#### 7.2.4 主模型组装
+#### 7.2.4 模型编译 (`resnet_se_lstm.py`)
 
 ```python
-class CardioFitNet(nn.Module):
-    """多模态心肺功能评估主模型"""
-    
-    def __init__(self, config):
-        super().__init__()
-        embed_dim = config.embed_dim  # 128
-        
-        # 单模态编码器
-        self.ecg_encoder = SignalEncoder(in_channels=1, output_dim=embed_dim)
-        self.ppg_encoder = SignalEncoder(in_channels=2, output_dim=embed_dim)
-        self.scg_encoder = SignalEncoder(in_channels=3, output_dim=embed_dim)
-        
-        # 人口学特征编码
-        self.demo_encoder = nn.Sequential(
-            nn.Linear(5, 32),  # age, sex, height, weight, bmi
-            nn.ReLU(),
-            nn.Linear(32, embed_dim)
-        )
-        
-        # 融合层 (可切换策略)
-        fusion_type = config.fusion_type  # "early" | "mid" | "late"
-        if fusion_type == "mid":
-            self.fusion = AttentionFusion(embed_dim, n_modalities=3)
-        elif fusion_type == "late":
-            self.fusion = LateFusion(embed_dim, n_modalities=3)
-        elif fusion_type == "early":
-            self.fusion = EarlyFusion(...)
-            self.unified_encoder = SignalEncoder(in_channels=6, output_dim=embed_dim)
-        
-        # 回归头
-        fused_dim = embed_dim + embed_dim  # signal fusion + demographics
-        self.shared_fc = nn.Sequential(
-            nn.Linear(fused_dim, 256),
-            nn.ReLU(),
-            nn.Dropout(0.3),
-            nn.Linear(256, 128),
-            nn.ReLU(),
-        )
-        self.vo2max_head = nn.Linear(128, 1)
-        self.co_head = nn.Linear(128, 1)
-    
-    def forward(self, ecg, ppg, scg, demographics):
-        """
-        Args:
-            ecg: (B, 1, L_ecg) 
-            ppg: (B, 2, L_ppg)
-            scg: (B, 3, L_scg)
-            demographics: (B, 5) [age, sex, height, weight, bmi]
-        Returns:
-            vo2max_pred: (B, 1)
-            co_pred: (B, 1)
-        """
-        ecg_emb = self.ecg_encoder(ecg)
-        ppg_emb = self.ppg_encoder(ppg)
-        scg_emb = self.scg_encoder(scg)
-        demo_emb = self.demo_encoder(demographics)
-        
-        signal_fused, attn_weights = self.fusion(ecg_emb, ppg_emb, scg_emb)
-        combined = torch.cat([signal_fused, demo_emb], dim=-1)
-        
-        shared = self.shared_fc(combined)
-        vo2max_pred = self.vo2max_head(shared)
-        co_pred = self.co_head(shared)
-        
-        return {
-            "vo2max": vo2max_pred,
-            "co": co_pred,
-            "attention_weights": attn_weights
-        }
+def compile_model(model, learning_rate=0.001, clipvalue=1.0):
+    """Huber 双损失 + Adam 梯度裁剪"""
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(
+            learning_rate=learning_rate, clipvalue=clipvalue),
+        loss={
+            "co_output": tf.keras.losses.Huber(delta=1.0),
+            "vo2_output": tf.keras.losses.Huber(delta=1.0),
+        },
+        loss_weights={"co_output": 1.0, "vo2_output": 1.0},
+        metrics={"co_output": ["mae"], "vo2_output": ["mae"]},
+    )
+    return model
 ```
 
 ---
@@ -780,93 +672,71 @@ class CardioFitNet(nn.Module):
 
 ### 8.1 默认超参数 (`configs/default.yaml`)
 
+> 以下为实际使用的配置文件结构，完整内容见 `configs/default.yaml`。
+
 ```yaml
-# ===== 数据 =====
-data:
-  root_dir: "data/processed"
-  beat_window_ecg: 300     # 采样点 (600ms @ 500Hz)
-  beat_window_ppg: 120     # 采样点 (1200ms @ 100Hz)
-  beat_window_scg: 640     # 采样点 (800ms @ 800Hz)
-  n_beats_per_sample: 10   # 每个样本取连续10个心搏
-  augmentation:
-    enabled: true
-    noise_std: 0.01
-    scale_range: [0.95, 1.05]
-    time_shift_ms: 20
-
-# ===== 模型 =====
-model:
-  name: "CardioFitNet"
-  embed_dim: 128
-  fusion_type: "mid"            # "early" | "mid" | "late"
-  seq_model: "bilstm"           # "bilstm" | "transformer"
-  n_res_blocks: 4
-  dropout: 0.3
-
-# ===== 训练 =====
-training:
-  epochs: 200
-  batch_size: 32
-  optimizer:
-    type: "AdamW"
-    lr: 1e-3
-    weight_decay: 1e-4
-  scheduler:
-    type: "CosineAnnealingWarmRestarts"
-    T_0: 20
-    T_mult: 2
-  loss:
-    vo2max_weight: 1.0
-    co_weight: 1.0
-    type: "huber"               # "mse" | "huber" | "smooth_l1"
-  early_stopping:
-    patience: 20
-    metric: "val_rmse"
-    mode: "min"
-  gradient_clip: 1.0
-
-# ===== 评估 =====
-evaluation:
-  cv_folds: 5
-  metrics: ["r2", "rmse", "mae", "mape", "pearson_r"]
-  bland_altman: true
-
-# ===== 系统 =====
-system:
+project:
+  name: CardioFit
   seed: 42
-  num_workers: 4
-  device: "cuda"
-  mixed_precision: true
-  wandb_project: "cardiofit"
+
+paths:
+  raw_data: data/raw
+  processed_data: data/processed
+  checkpoints: outputs/checkpoints
+  logs: outputs/logs
+  onnx: outputs/onnx
+
+signal:
+  sampling_rate_target: 125   # 统一重采样目标 (Hz)
+  window_size: 125            # 窗口样本数 (1秒)
+  window_before_r: 40
+  window_after_r: 85
+  channels: 3                 # [ECG, PPG_IR, SCG_z]
+
+model:
+  input_shape: [125, 3]
+  n_clinical: 10
+  lstm_units: 64
+  dense_units: 128
+  dropout: 0.3
+  dropout_shared: 0.2
+  l2_reg: 4.11e-05
+  se_reduction: 8
+
+training:
+  batch_size: 32
+  max_epochs: 100
+  learning_rate: 0.001
+  early_stopping_patience: 20
+  optimizer: adam
+  loss: huber
+  huber_delta: 1.0
+  loss_weights:
+    co_output: 1.0
+    vo2_output: 1.0
+  clipvalue: 1.0
+
+data_split:
+  ratios: [0.7, 0.15, 0.15]
+  split_method: per_subject
 ```
 
 ### 8.2 损失函数
 
+损失函数通过 Keras 内置的 `model.compile()` 配置，而非自定义类：
+
 ```python
-class CardioFitLoss(nn.Module):
-    """多任务联合损失"""
-    
-    def __init__(self, vo2_weight=1.0, co_weight=1.0, loss_type="huber"):
-        super().__init__()
-        self.vo2_weight = vo2_weight
-        self.co_weight = co_weight
-        
-        if loss_type == "mse":
-            self.criterion = nn.MSELoss()
-        elif loss_type == "huber":
-            self.criterion = nn.HuberLoss(delta=1.0)
-        elif loss_type == "smooth_l1":
-            self.criterion = nn.SmoothL1Loss()
-    
-    def forward(self, pred, target):
-        loss_vo2 = self.criterion(pred["vo2max"], target["vo2max"])
-        loss_co = self.criterion(pred["co"], target["co"])
-        total = self.vo2_weight * loss_vo2 + self.co_weight * loss_co
-        return {
-            "total": total,
-            "vo2max_loss": loss_vo2,
-            "co_loss": loss_co
-        }
+# 在 compile_model() 中配置
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(
+        learning_rate=0.001, clipvalue=1.0),
+    loss={
+        "co_output": tf.keras.losses.Huber(delta=1.0),
+        "vo2_output": tf.keras.losses.Huber(delta=1.0),
+    },
+    loss_weights={"co_output": 1.0, "vo2_output": 1.0},
+    metrics={"co_output": ["mae"], "vo2_output": ["mae"]},
+)
 ```
 
 ---
@@ -935,43 +805,35 @@ ABLATION_CONFIGS = [
 ### 10.1 核心依赖
 
 ```
-# 深度学习
-torch>=2.0
-pytorch-lightning>=2.0
-torchmetrics
+# 深度学习框架 (⚠️ 禁止 PyTorch)
+tensorflow>=2.16          # Mac: tensorflow + tensorflow-metal
+                          # WSL: tensorflow[and-cuda]
+tf2onnx>=1.16             # ONNX 导出
+onnxruntime>=1.18         # ONNX 推理验证
 
 # 信号处理
-scipy
-neurokit2            # ECG/PPG/HRV 处理
-biosppy              # 生物信号处理
-heartpy              # HRV 分析
-wfdb                 # 心电数据工具
+scipy>=1.10
+neurokit2>=0.2.10         # ECG/PPG/HRV 处理
 
 # 数据处理
-numpy
-pandas
-h5py                 # HDF5 数据存储
-scikit-learn
-
-# 机器学习基线
-xgboost
-lightgbm
+numpy>=1.24
+pandas>=2.0
+h5py>=3.9                 # HDF5 数据存储
+scikit-learn>=1.3
 
 # 可视化
-matplotlib
-seaborn
-plotly
+matplotlib>=3.7
+seaborn>=0.12
 
-# 实验管理
-wandb                # 实验跟踪
-omegaconf            # 配置管理
-hydra-core           # 配置框架
+# 配置管理
+pyyaml>=6.0               # 简单 YAML 配置
 
 # 工具
-tqdm
-click                # CLI
-pytest               # 测试
+tqdm>=4.65
+pytest>=7.4
 ```
+
+> ⚠️ 完整依赖见 `requirements-mac.txt`（Mac）和 `requirements-wsl.txt`（Windows WSL2 GPU）。
 
 ### 10.2 硬件参考规格
 
@@ -988,60 +850,34 @@ pytest               # 测试
 
 ## 11. 开发阶段与里程碑
 
-### Phase 1: 基础设施 (第1-2周)
+### Phase 1-8: 基础代码框架 (已完成 ✅)
 
-- [ ] 初始化项目结构，配置 Git、CI、依赖管理
-- [ ] 实现 `configs/` 配置系统 (OmegaConf + Hydra)
-- [ ] 实现 `utils/` 工具模块 (logging, seed, IO)
-- [ ] 编写数据字典文档
+- [x] 项目结构、Git、CI、依赖管理
+- [x] 配置系统 (`configs/default.yaml` + `pyyaml`)
+- [x] 预处理管道 (`ecg_processor`, `ppg_processor`, `scg_processor`)
+- [x] 信号同步与窗口提取 (`sync_and_segment.py`)
+- [x] HDF5 构建管道 (`build_hdf5.py`)
+- [x] 数据加载与切分 (`hdf5_loader`, `data_split`, `augmentation`)
+- [x] ResNet18-SE-LSTM 模型 (TensorFlow/Keras)
+- [x] SE 通道注意力 + 残差块
+- [x] 内置标准化层 (ONNX 兼容)
+- [x] 训练脚本 + 回调 (早停、模型保存)
+- [x] 评估管道 (指标 + Bland-Altman + 可视化)
+- [x] ONNX 导出
+- [x] 合成数据全管线验证通过
+### Phase 9: 真实数据训练 (待进行)
 
-### Phase 2: 预处理管道 (第3-5周)
+- [ ] 导入真实受试者数据到 `data/raw/`
+- [ ] 运行预处理管道生成 HDF5
+- [ ] 使用真实数据训练 ResNet18-SE-LSTM
+- [ ] 初步评估模型性能
 
-- [ ] 实现 `ECGProcessor`（滤波、R峰检测、HRV）
-- [ ] 实现 `PPGProcessor`（滤波、波峰检测、特征）
-- [ ] 实现 `SCGProcessor`（滤波、AO/AC检测、STI计算）
-- [ ] 实现 `MultiModalSync` 多信号同步
-- [ ] 实现 `SignalQualityAssessor`
-- [ ] 实现 `segmentation.py` 心搏分段
-- [ ] 单元测试全覆盖
+### Phase 10: 模型优化与论文 (待进行)
 
-### Phase 3: 特征工程 (第6-7周)
-
-- [ ] 实现各模态特征提取函数
-- [ ] 实现跨模态特征（PTT, EMD）
-- [ ] 构建 HDF5 预处理数据写入管道
-- [ ] 数据探索性分析 Notebook
-
-### Phase 4: 数据集与DataLoader (第8周)
-
-- [ ] 实现 `CardioFitDataset` (PyTorch Dataset)
-- [ ] 实现数据增强 transforms
-- [ ] 实现 DataLoader 工厂 (train/val/test)
-- [ ] 数据划分脚本
-
-### Phase 5: 模型开发 (第9-12周)
-
-- [ ] 实现 `ResBlock1D`
-- [ ] 实现三个 `SignalEncoder`
-- [ ] 实现三种融合策略
-- [ ] 组装 `CardioFitNet` 主模型
-- [ ] 实现基线模型 (FRIEND方程, SVM, XGBoost, RF)
-- [ ] 实现损失函数与训练循环
-
-### Phase 6: 训练与调优 (第13-16周)
-
-- [ ] 基线模型训练与评估
-- [ ] CardioFitNet 训练 (各融合策略)
-- [ ] 超参数搜索 (learning rate, dropout, architecture)
-- [ ] 消融实验执行
-- [ ] WandB 实验跟踪
-
-### Phase 7: 评估与可视化 (第17-18周)
-
+- [ ] 超参数搜索 (learning rate, dropout, l2_reg)
+- [ ] 消融实验 (模态贡献、临床特征贡献)
 - [ ] 全指标评估 (R², RMSE, MAE, MAPE)
 - [ ] Bland-Altman 图绘制
-- [ ] 消融结果汇总
-- [ ] 注意力权重可视化
 - [ ] 论文图表生成
 
 ---
@@ -1050,14 +886,14 @@ pytest               # 测试
 
 | 决策 | 选项 | 选择 | 理由 |
 |------|------|------|------|
+| 深度学习框架 | PyTorch / TensorFlow | TensorFlow/Keras | 复用董雪论文 ResNet18-SE-LSTM 实现，减少重写工作量 |
 | 数据存储格式 | CSV / HDF5 / LMDB | HDF5 | 支持大规模、多维数组、元数据，IO 高效 |
+| 输入架构 | 三编码器融合 / 统一堆叠 | 统一重采样到125Hz堆叠为(125,3) | 复用论文架构，简化实现 |
 | R峰检测 | Pan-Tompkins / neurokit2 | neurokit2 | 集成度高，有质量评估 |
-| SCG 主轴 | z轴 / 合成向量 | z轴为主 + 三轴输入模型 | z轴信噪比最佳，三轴保留空间信息 |
-| 序列模型 | LSTM / Transformer | 均实现，实验选优 | 文献中两者均有成功案例 |
-| 融合策略 | 早/中/晚 | 中期融合优先 | 文献表明注意力融合效果好，但需消融验证 |
-| 多任务学习 | 共享 / 独立 | 共享backbone + 独立head | VO₂max 与 CO 生理关联（Fick 原理），共享特征有益 |
+| 模型标准化 | 外部scaler / 内置层 | 内置 StandardizeSignalFlat层 | ONNX导出自包含，推理时无需额外处理 |
+| 多任务学习 | 共享 / 独立 | 共享 backbone + 独立 head | VO₂max 与 CO 生理关联（Fick 原理），共享特征有益 |
+| 配置管理 | OmegaConf+Hydra / 简单YAML | pyyaml + default.yaml | 轻量级够用，减少依赖 |
 | 交叉验证 | K-fold / LOSO | 5-fold + LOSO | 平衡计算成本与泛化评估 |
-| 实验管理 | MLflow / WandB | WandB | 云端协作、可视化友好 |
 
 ---
 
@@ -1091,61 +927,60 @@ pytest               # 测试
 
 ```bash
 # 预处理
-python scripts/preprocess_all.py --input data/raw --output data/processed --config configs/default.yaml
-
-# 特征提取
-python scripts/extract_features.py --input data/processed --output data/features
+python scripts/build_preprocessed_dataset.py --config configs/default.yaml
 
 # 训练
-python scripts/train.py --config configs/experiment/vo2max_multimodal.yaml --gpus 1
+python scripts/train_multimodal.py --config configs/default.yaml
 
 # 评估
-python scripts/evaluate.py --checkpoint runs/best_model.ckpt --test-data data/splits/test_subjects.txt
+python scripts/evaluate_multimodal.py --config configs/default.yaml
 
-# 消融实验
-python scripts/ablation_study.py --config configs/experiment/ablation_study.yaml
+# 导出 ONNX
+python scripts/export_onnx.py --config configs/default.yaml
 
-# 可视化
-python scripts/visualize_results.py --results runs/experiment_001/results.json --output figures/
+# 全管线验证 (合成数据)
+python scripts/verify_pipeline.py
+
+# 测试
+pytest tests/ -v
 ```
 
 ---
 
-## 15. 与 Claude Code 协作指南
+## 15. 三端协作指南
 
-### 15.1 开发顺序建议
+### 15.1 AI 工具与指令文件
 
-1. **从预处理开始**: 先实现可靠的信号处理管道，这是整个系统的基础
-2. **构建 Dataset**: 确保 DataLoader 正确加载和对齐多模态数据
-3. **先跑基线**: 用 XGBoost + 手工特征验证数据管道，建立性能基准
-4. **再搭深度模型**: 从单模态开始，逐步加入融合
-5. **最后做消融**: 在完整模型可用后系统性消融
+| 工具 | 指令文件 | 共享上下文 |
+|------|----------|----------|
+| Claude Code | `CLAUDE.md` | `AI_CONTEXT.md` |
+| OpenAI Codex | `AGENTS.md` | `AI_CONTEXT.md` |
+| Antigravity | `AI_CONTEXT.md` | `AI_CONTEXT.md` |
 
-### 15.2 每个模块的开发原则
+### 15.2 调度规则
 
-- 每个 `.py` 文件应包含清晰的 docstring、类型注解
-- 每个核心函数需配套单元测试
-- 使用 `logging` 而非 `print`
-- 配置通过 YAML 驱动，避免硬编码
-- 数据路径使用 `pathlib.Path`
+- **任务调度由人类手动执行**，AI 工具不自行认领任务
+- **`.tasks.yaml`** 是任务进度的唯一权威来源
+- 每次切换电脑/工具前：`git pull`；完成后：`git push`
+- 不要同时编辑同一文件
 
-### 15.3 模拟数据开发
+### 15.3 开发顺序建议
+
+1. **导入真实数据**: 将受试者数据放入 `data/raw/`
+2. **运行预处理**: `python scripts/build_preprocessed_dataset.py`
+3. **训练模型**: `python scripts/train_multimodal.py`
+4. **评估结果**: `python scripts/evaluate_multimodal.py`
+5. **调参与消融**: 修改 `configs/default.yaml` 重复步骤 3-4
+
+### 15.4 模拟数据开发
 
 在真实数据到位前，可用合成数据开发和测试：
 
-```python
-def generate_synthetic_data(n_subjects=20, n_beats=100):
-    """生成模拟的多模态心肺信号数据用于开发测试"""
-    for i in range(n_subjects):
-        ecg = simulate_ecg(duration=300, fs=500)
-        ppg = simulate_ppg(duration=300, fs=100)
-        scg = simulate_scg(duration=300, fs=800)
-        vo2max = np.random.normal(40, 10)  # 模拟VO2max分布
-        co = np.random.normal(5, 1.5)       # 模拟CO分布
-        yield {"ecg": ecg, "ppg": ppg, "scg": scg, 
-               "vo2max": vo2max, "co": co}
+```bash
+# 全管线验证 (自动生成合成数据 + 训练 + 评估)
+python scripts/verify_pipeline.py
 ```
 
 ---
 
-*文档结束。此文档应作为 Claude Code 项目开发的核心参考，随项目进展持续更新。*
+*文档结束。此文档应作为项目开发的核心参考，随项目进展持续更新。*

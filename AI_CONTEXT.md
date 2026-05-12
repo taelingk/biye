@@ -1,10 +1,16 @@
 # CardioFit — AI 工具共享上下文
 
 > 三端启动时先读此文件。Claude Code / Codex / Antigravity 通用。
+>
+> ⚠️ **Antigravity / Gemini 用户**：本文件是你的主指令文件，等同于 CLAUDE.md 和 AGENTS.md。请同时遵守 `.tasks.yaml` 中的任务调度规则。
 
 ## 项目目标
 
 基于 PPG + ECG + SCG 多模态穿戴式信号，使用深度学习方法（ResNet18-SE-LSTM）无创预测 **心输出量 (CO)** 和 **最大摄氧量 (VO₂max)**。
+
+## 框架选型
+
+> ⚠️ **本项目使用 TensorFlow / Keras**，禁止引入 PyTorch。
 
 ## 技术路线
 
@@ -19,20 +25,15 @@
 
 ## 当前进度
 
-| Phase | 状态 | 负责人 | 分支 |
-|-------|------|--------|------|
-| 1. 环境搭建 | ✅ done | claude-code | feat/core-pipeline |
-| 2. 预处理 | ✅ done | claude-code | feat/core-pipeline |
-| 3. 数据加载 | ✅ done | claude-code | feat/core-pipeline |
-| 4. 模型定义 | ✅ done | claude-code | feat/core-pipeline |
-| 5. 训练脚本 | ✅ done | claude-code | feat/core-pipeline |
-| 6. 评估管道 | ✅ done | claude-code | feat/core-pipeline |
-| 7. ONNX导出 | ✅ done | claude-code | feat/core-pipeline |
-| 8. 验证可运行 | 🔄 in_progress | claude-code | feat/core-pipeline |
-| 9. 真实数据训练 | ⏳ free | — | — |
-| 10. 模型调优 | ⏳ free | — | — |
+> **权威来源**: `.tasks.yaml`。以下仅为概览，如有冲突以 `.tasks.yaml` 为准。
 
-> 协作约定：见 `.tasks.yaml`。三端（Claude Code / Codex / Antigravity）认领任务前先检查 status，in_progress 的跳过，done 的跳过。
+| Phase | 任务 | 状态 |
+|-------|------|------|
+| 1-8 | 环境搭建 → 验证可运行 | ✅ done |
+| 9 | 真实数据训练 | ⏳ free |
+| 10 | 模型优化 + 调参 | ⏳ free |
+
+> 协作约定：三端（Claude Code / Codex / Antigravity）不自行认领任务。由人类在 `.tasks.yaml` 中分配任务并 `git push`，然后通知对应工具执行。
 
 ## 架构决策记录
 
@@ -66,6 +67,7 @@
 - **日志**: `logging` 模块，禁止 `print`
 - **配置**: 超参数通过 YAML 传入
 - **数据泄露**: 按受试者切分，同一受试者不能跨 train/val/test
+- **框架**: TensorFlow/Keras，禁止 PyTorch
 
 ## 模块接口契约
 
@@ -120,15 +122,24 @@ def build_multimodal_resnet_se_lstm(
 
 ## 跨平台说明
 
-| 平台 | 用途 | 环境 |
-|------|------|------|
-| MacBook M1 Pro | 开发、预处理调试、小批量验证 | tensorflow-metal |
-| Windows WSL2 | GPU 正式训练 | tensorflow[and-cuda] |
+| 平台 | 用途 | 环境 | 依赖文件 |
+|------|------|------|----------|
+| MacBook M1 Pro | 开发、预处理调试、小批量验证 | tensorflow >= 2.16 | `requirements-mac.txt` |
+| Windows (WSL2 + GPU) | GPU 正式训练 | tensorflow[and-cuda] >= 2.16 | `requirements-wsl.txt` |
+| Windows (原生) | 文档编辑、AI 辅助开发 | — | — |
 
-依赖文件: `requirements-mac.txt` / `requirements-wsl.txt`
+## 三端协作规则
+
+| 工具 | 指令文件 | 行为 |
+|------|----------|------|
+| Claude Code | `CLAUDE.md` → `AI_CONTEXT.md` | 先读 CLAUDE.md |
+| Codex | `AGENTS.md` → `AI_CONTEXT.md` | 先读 AGENTS.md |
+| Antigravity | `AI_CONTEXT.md` | 直接读本文件 |
+
+**调度方式**：人类在 `.tasks.yaml` 中手动分配任务 → `git push` 锁定 → 通知 AI 工具执行 → 完成后人类改状态 → `git push` 释放。
 
 ## 参考资源
 
-- 论文模型: `~/code/codongxue/src/training/train_svco_model.py`
-- 论文预处理: `~/code/codongxue/src/preprocessing/`
+- 参考论文: 董雪学位论文 — ResNet18-SE-LSTM 架构 (TensorFlow/Keras)
 - 项目技术规格: `TECHNICAL_DOC.md`
+- 项目路线图分析: `docs/roadmap_explanation.md`
