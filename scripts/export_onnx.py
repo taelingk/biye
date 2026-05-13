@@ -14,12 +14,19 @@ import sys
 from pathlib import Path
 
 import numpy as np
+import onnxruntime as ort
 import tensorflow as tf
 import tf2onnx
-import onnxruntime as ort
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from src.cardiofit.models import (
+    ResidualSEBlock,
+    SEBlock,
+    Standardize1D,
+    StandardizeClinical,
+    StandardizeSignalFlat,
+)
 from src.cardiofit.utils.logging import setup_logging
 
 logger = logging.getLogger(__name__)
@@ -28,21 +35,35 @@ logger = logging.getLogger(__name__)
 def main():
     parser = argparse.ArgumentParser(description="Export model to ONNX")
     parser.add_argument("--checkpoint", type=str, required=True)
-    parser.add_argument("--output", type=str, default="outputs/onnx/cardiofit_multimodal.onnx")
+    parser.add_argument(
+        "--output", type=str, default="outputs/onnx/cardiofit_multimodal.onnx"
+    )
     parser.add_argument("--opset", type=int, default=13)
     args = parser.parse_args()
 
     setup_logging()
 
     # --- 1. Load model ---
-    model = tf.keras.models.load_model(args.checkpoint, compile=False)
+    model = tf.keras.models.load_model(
+        args.checkpoint,
+        custom_objects={
+            "ResidualSEBlock": ResidualSEBlock,
+            "SEBlock": SEBlock,
+            "StandardizeSignalFlat": StandardizeSignalFlat,
+            "StandardizeClinical": StandardizeClinical,
+            "Standardize1D": Standardize1D,
+        },
+        compile=False,
+    )
     logger.info(f"Loaded model from {args.checkpoint}")
     logger.info(f"Inputs: {[i.name for i in model.inputs]}")
     logger.info(f"Outputs: {[o.name for o in model.outputs]}")
 
     # --- 2. Convert to ONNX ---
-    spec = (tf.TensorSpec(model.inputs[0].shape, tf.float32, name="signal_input"),
-            tf.TensorSpec(model.inputs[1].shape, tf.float32, name="clinical_input"))
+    spec = (
+        tf.TensorSpec(model.inputs[0].shape, tf.float32, name="signal_input"),
+        tf.TensorSpec(model.inputs[1].shape, tf.float32, name="clinical_input"),
+    )
 
     output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -67,7 +88,9 @@ def main():
     sig_test = np.random.randn(1, 125, 3).astype(np.float32)
     cli_test = np.random.randn(1, 10).astype(np.float32)
 
-    onnx_pred = session.run(output_names, {"signal_input": sig_test, "clinical_input": cli_test})
+    onnx_pred = session.run(
+        output_names, {"signal_input": sig_test, "clinical_input": cli_test}
+    )
     keras_pred = model.predict([sig_test, cli_test], verbose=0)
 
     for i, (onnx_out, keras_out) in enumerate(zip(onnx_pred, keras_pred)):
@@ -76,7 +99,9 @@ def main():
         logger.info(f"  {name}: max diff Keras vs ONNX = {diff:.6f}")
         assert diff < 1e-4, f"ONNX verification failed for {name}: max diff = {diff}"
 
-    logger.info("ONNX verification PASSED — self-contained with built-in standardization")
+    logger.info(
+        "ONNX verification PASSED — self-contained with built-in standardization"
+    )
 
 
 if __name__ == "__main__":

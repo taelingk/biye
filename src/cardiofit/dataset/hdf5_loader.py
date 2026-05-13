@@ -2,12 +2,12 @@
 
 Interface contract:
     load_subject(filepath) -> (signals (N,125,3), clinical (N,10), co (N,1), vo2 (N,1))
-    build_tf_dataset(subject_ids, data_root, batch_size, shuffle, augment) -> tf.data.Dataset
+    build_tf_dataset(subject_ids, data_root, batch_size, shuffle, augment)
+        -> tf.data.Dataset
 """
 
 import logging
 from pathlib import Path
-from typing import Optional
 
 import h5py
 import numpy as np
@@ -16,7 +16,9 @@ import tensorflow as tf
 logger = logging.getLogger(__name__)
 
 
-def load_subject(filepath: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def load_subject(
+    filepath: Path,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Load a single subject's HDF5 file.
 
     Args:
@@ -71,7 +73,9 @@ def load_multiple_subjects(
     )
 
 
-def augment_segment(signal: np.ndarray, prob: float = 0.3, noise_ratio: float = 0.05) -> np.ndarray:
+def augment_segment(
+    signal: np.ndarray, prob: float = 0.3, noise_ratio: float = 0.05
+) -> np.ndarray:
     """Apply time-shift and Gaussian noise augmentation (mirrors paper).
 
     Args:
@@ -123,9 +127,7 @@ def build_tf_dataset(
     if augment:
         signals = np.array([augment_segment(x) for x in signals])
 
-    ds = tf.data.Dataset.from_tensor_slices(
-        ((signals, clinical), (co, vo2))
-    )
+    ds = tf.data.Dataset.from_tensor_slices(((signals, clinical), (co, vo2)))
 
     if shuffle:
         ds = ds.shuffle(min(n_samples, 10000), seed=seed)
@@ -135,16 +137,14 @@ def build_tf_dataset(
     return ds
 
 
-def fit_standardization_params(
-    subject_ids: list[str], data_root: Path
-) -> dict:
+def fit_standardization_params(subject_ids: list[str], data_root: Path) -> dict:
     """Compute standardization parameters from training subjects.
 
     Signal: flattened to (N, 375) then StandardScaler.
     Clinical: per-feature (N, 10) StandardScaler.
 
     Returns:
-        {"signal_mean": ..., "signal_std": ..., "clinical_mean": ..., "clinical_std": ...}
+        Standardization params for signal and clinical feature tensors.
     """
     signals, clinical, _, _ = load_multiple_subjects(subject_ids, data_root)
 

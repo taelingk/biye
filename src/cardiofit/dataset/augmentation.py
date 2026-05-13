@@ -39,8 +39,13 @@ def gaussian_noise(signal: np.ndarray, std_ratio: float = 0.05) -> np.ndarray:
     return signal + noise
 
 
-def augment_segment_tf(signal: np.ndarray, shift_prob: float = 0.3, noise_prob: float = 0.3,
-                        max_shift: int = 2, noise_ratio: float = 0.05) -> np.ndarray:
+def augment_segment_tf(
+    signal: np.ndarray,
+    shift_prob: float = 0.3,
+    noise_prob: float = 0.3,
+    max_shift: int = 2,
+    noise_ratio: float = 0.05,
+) -> np.ndarray:
     """Apply augmentation to a single segment (NumPy, for use in tf.data pipeline).
 
     Args:

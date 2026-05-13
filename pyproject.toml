@@ -5,29 +5,24 @@ description = "Multimodal wearable cardiopulmonary assessment system (ECG + PPG 
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-  "torch>=2.0",
-  "pytorch-lightning>=2.0",
-  "torchmetrics",
   "numpy",
   "pandas",
   "scipy",
   "h5py",
   "scikit-learn",
   "neurokit2",
-  "biosppy",
-  "heartpy",
-  "wfdb",
-  "xgboost",
-  "lightgbm",
+  "tensorflow>=2.16",
+  "tf2onnx>=1.16",
+  "onnx>=1.16",
+  "onnxruntime>=1.18",
   "matplotlib",
   "seaborn",
-  "plotly",
-  "wandb",
-  "omegaconf",
-  "hydra-core",
+  "pyyaml>=6.0",
   "tqdm",
-  "click",
   "pytest",
+  "ruff",
+  "black",
+  "isort",
 ]
 
 [tool.black]

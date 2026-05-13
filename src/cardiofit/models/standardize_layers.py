@@ -6,8 +6,8 @@ so the exported ONNX is self-contained (no need for external scaler at inference
 Reference: ~/code/codongxue/src/training/train_svco_model.py (lines 438-484)
 
 Our changes from paper:
-    - StandardizeClinical: unified (None, 10) input instead of 11 separate (None, 1) inputs.
-    - StandardizeSignalFlat: unchanged except channels=3 (was also 3 in paper: PPG+1st+2nd).
+    - StandardizeClinical: unified (None, 10) input.
+    - StandardizeSignalFlat: unchanged except channels=3.
 """
 
 import numpy as np
@@ -15,6 +15,7 @@ import tensorflow as tf
 from tensorflow.keras.layers import Layer
 
 
+@tf.keras.utils.register_keras_serializable(package="cardiofit")
 class Standardize1D(Layer):
     """Standardize a scalar feature: z = (x - mean) / (scale + eps).
 
@@ -36,16 +37,19 @@ class Standardize1D(Layer):
 
     def get_config(self):
         cfg = super().get_config()
-        cfg.update({
-            "mean": self.mean.reshape(-1).tolist(),
-            "scale": self.scale.reshape(-1).tolist(),
-            "eps": self.eps,
-        })
+        cfg.update(
+            {
+                "mean": self.mean.reshape(-1).tolist(),
+                "scale": self.scale.reshape(-1).tolist(),
+                "eps": self.eps,
+            }
+        )
         return cfg
 
 
+@tf.keras.utils.register_keras_serializable(package="cardiofit")
 class StandardizeSignalFlat(Layer):
-    """Standardize (None, window_size, channels) by flattening to (None, window_size*channels).
+    """Standardize signal windows by flattening time and channels.
 
     Exactly mirrors sklearn StandardScaler(is_2d=True):
       reshape (B, T, C) → (B, T*C), z-score per dimension, reshape back.
@@ -53,9 +57,17 @@ class StandardizeSignalFlat(Layer):
     Our window_size=125, channels=3 → flattens to (B, 375).
     """
 
-    def __init__(self, mean, scale, window_size: int = 125, channels: int = 3, eps: float = 1e-8, **kwargs):
+    def __init__(
+        self,
+        mean,
+        scale,
+        window_size: int = 125,
+        channels: int = 3,
+        eps: float = 1e-8,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
-        self.mean = np.array(mean, dtype=np.float32).reshape(1, -1)    # (1, 375)
+        self.mean = np.array(mean, dtype=np.float32).reshape(1, -1)  # (1, 375)
         self.scale = np.array(scale, dtype=np.float32).reshape(1, -1)  # (1, 375)
         self.window_size = int(window_size)
         self.channels = int(channels)
@@ -70,19 +82,23 @@ class StandardizeSignalFlat(Layer):
 
     def get_config(self):
         cfg = super().get_config()
-        cfg.update({
-            "window_size": self.window_size,
-            "channels": self.channels,
-            "eps": self.eps,
-        })
+        cfg.update(
+            {
+                "mean": self.mean.reshape(-1).tolist(),
+                "scale": self.scale.reshape(-1).tolist(),
+                "window_size": self.window_size,
+                "channels": self.channels,
+                "eps": self.eps,
+            }
+        )
         return cfg
 
 
+@tf.keras.utils.register_keras_serializable(package="cardiofit")
 class StandardizeClinical(Layer):
     """Standardize (None, n_features) clinical matrix — unified version for our project.
 
-    This replaces the paper's 11 separate Standardize1D layers with one layer that handles
-    all 10 clinical features at once.
+    This replaces the paper's 11 separate Standardize1D layers.
 
     Input: (None, 10)
     Output: (None, 10)
@@ -100,9 +116,11 @@ class StandardizeClinical(Layer):
 
     def get_config(self):
         cfg = super().get_config()
-        cfg.update({
-            "mean": self.mean.reshape(-1).tolist(),
-            "scale": self.scale.reshape(-1).tolist(),
-            "eps": self.eps,
-        })
+        cfg.update(
+            {
+                "mean": self.mean.reshape(-1).tolist(),
+                "scale": self.scale.reshape(-1).tolist(),
+                "eps": self.eps,
+            }
+        )
         return cfg

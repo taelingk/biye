@@ -19,11 +19,11 @@ Interface contracts (do not change without updating AI_CONTEXT.md):
     build_subject_hdf5(raw_dir, output_dir, subject_id, clinical, config) -> None
 """
 
+from .build_hdf5 import build_subject_hdf5, compute_clinical_features
 from .ecg_processor import process_ecg
 from .ppg_processor import process_ppg
 from .scg_processor import process_scg
-from .sync_and_segment import extract_windows, compute_hr_from_r_peaks
-from .build_hdf5 import build_subject_hdf5, compute_clinical_features
+from .sync_and_segment import compute_hr_from_r_peaks, extract_windows
 
 __all__ = [
     "process_ecg",

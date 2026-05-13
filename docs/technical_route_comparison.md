@@ -43,7 +43,7 @@
 ```python
 class DerivativeEnhancement:
     """多阶导数特征增强（参考董雪论文）
-    
+
     将原始信号与其一阶、二阶导数拼接，构建多通道时序特征矩阵。
     - PPG: (1ch → 3ch) 或 (2ch → 6ch，红光+红外各自求导)
     - ECG: (1ch → 3ch)
@@ -75,7 +75,7 @@ self.scg_encoder = SignalEncoder(in_channels=9, ...)   # SCG 3ch × 3
 ```python
 class SEBlock1D(nn.Module):
     """Squeeze-and-Excitation 通道注意力（参考董雪论文 ResNet18-SE-LSTM）"""
-    
+
     def __init__(self, channels, reduction=16):
         super().__init__()
         self.squeeze = nn.AdaptiveAvgPool1d(1)
@@ -85,7 +85,7 @@ class SEBlock1D(nn.Module):
             nn.Linear(channels // reduction, channels),
             nn.Sigmoid()
         )
-    
+
     def forward(self, x):
         # x: (B, C, L)
         b, c, _ = x.size()
@@ -100,7 +100,7 @@ class ResBlock1D(nn.Module):
     def __init__(self, in_ch, out_ch, kernel_size=7, stride=1, use_se=True):
         ...
         self.se = SEBlock1D(out_ch) if use_se else nn.Identity()
-    
+
     def forward(self, x):
         ...
         out = self.bn2(self.conv2(out))
@@ -120,16 +120,16 @@ class ResBlock1D(nn.Module):
 ```python
 ABLATION_CONFIGS = [
     # ... 现有配置 ...
-    
+
     # ===== 新增：输入特征消融（参考董雪论文） =====
     # 导数增强消融
     {"name": "raw_signal_only",        "derivative_enhance": False},
     {"name": "with_derivative",        "derivative_enhance": True},
-    
-    # SE注意力消融  
+
+    # SE注意力消融
     {"name": "without_se",             "use_se": False},
     {"name": "with_se",                "use_se": True},
-    
+
     # 序列模型消融
     {"name": "cnn_only",               "seq_model": None},
     {"name": "cnn_bilstm",             "seq_model": "bilstm"},

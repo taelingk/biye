@@ -29,16 +29,22 @@ def load_config(config_path: str) -> dict:
 def main():
     parser = argparse.ArgumentParser(description="Build preprocessed HDF5 dataset")
     parser.add_argument(
-        "--config", type=str, default="configs/default.yaml",
-        help="Path to YAML config file."
+        "--config",
+        type=str,
+        default="configs/default.yaml",
+        help="Path to YAML config file.",
     )
     parser.add_argument(
-        "--subject", type=str, default=None,
-        help="Process a single subject (e.g., 'subject_001'). If omitted, process all."
+        "--subject",
+        type=str,
+        default=None,
+        help="Process a single subject (e.g., 'subject_001'). If omitted, process all.",
     )
     parser.add_argument(
-        "--clinical", type=str, default=None,
-        help="Path to clinical registry CSV (subjects x clinical features)."
+        "--clinical",
+        type=str,
+        default=None,
+        help="Path to clinical registry CSV (subjects x clinical features).",
     )
     args = parser.parse_args()
 
@@ -56,6 +62,7 @@ def main():
     # Load clinical registry
     if args.clinical:
         import pandas as pd
+
         clinical_df = pd.read_csv(args.clinical, index_col=0)
     else:
         clinical_df = None
@@ -64,10 +71,13 @@ def main():
     if args.subject:
         subjects = [args.subject]
     else:
-        subjects = sorted([
-            d.name for d in raw_dir.iterdir()
-            if d.is_dir() and not d.name.startswith(".")
-        ])
+        subjects = sorted(
+            [
+                d.name
+                for d in raw_dir.iterdir()
+                if d.is_dir() and not d.name.startswith(".")
+            ]
+        )
 
     if not subjects:
         logging.error(f"No subject directories found in {raw_dir}")
@@ -91,8 +101,13 @@ def main():
         else:
             # Default clinical parameters (will be overridden by actual measurements)
             clinical_raw = {
-                "age": 30, "gender": 0, "weight_kg": 70, "height_cm": 170,
-                "hr_bpm": 70, "sbp": 120, "dbp": 80,
+                "age": 30,
+                "gender": 0,
+                "weight_kg": 70,
+                "height_cm": 170,
+                "hr_bpm": 70,
+                "sbp": 120,
+                "dbp": 80,
             }
 
         try:

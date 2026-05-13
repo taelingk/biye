@@ -1,7 +1,7 @@
 """Visualization utilities — prediction scatter, error distribution."""
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def plot_prediction_scatter(
@@ -28,13 +28,21 @@ def plot_prediction_scatter(
 
     # R² annotation
     from sklearn.metrics import r2_score
+
     r2 = r2_score(y_true, y_pred)
     from scipy.stats import pearsonr
+
     r, _ = pearsonr(y_true, y_pred)
 
-    ax.text(0.05, 0.95, f"R² = {r2:.4f}\nr = {r:.4f}",
-            transform=ax.transAxes, fontsize=12, verticalalignment="top",
-            bbox=dict(boxstyle="round", facecolor="white", alpha=0.8))
+    ax.text(
+        0.05,
+        0.95,
+        f"R² = {r2:.4f}\nr = {r:.4f}",
+        transform=ax.transAxes,
+        fontsize=12,
+        verticalalignment="top",
+        bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
+    )
 
     ax.set_xlabel(f"{xlabel} {unit}".strip())
     ax.set_ylabel(f"{ylabel} {unit}".strip())
@@ -66,13 +74,18 @@ def plot_error_distribution(
 
     fig, ax = plt.subplots(figsize=figsize)
 
-    ax.hist(errors, bins=30, density=True, alpha=0.6, color="steelblue", edgecolor="white")
+    ax.hist(
+        errors, bins=30, density=True, alpha=0.6, color="steelblue", edgecolor="white"
+    )
 
     # Normal fit
     from scipy.stats import norm
+
     mu, sigma = np.mean(errors), np.std(errors)
     x = np.linspace(errors.min(), errors.max(), 200)
-    ax.plot(x, norm.pdf(x, mu, sigma), "r-", linewidth=2, label=f"N({mu:.2f}, {sigma:.2f}²)")
+    ax.plot(
+        x, norm.pdf(x, mu, sigma), "r-", linewidth=2, label=f"N({mu:.2f}, {sigma:.2f}²)"
+    )
 
     ax.axvline(x=0, color="gray", linestyle="--", linewidth=1)
     ax.set_xlabel(f"Error {unit}".strip())

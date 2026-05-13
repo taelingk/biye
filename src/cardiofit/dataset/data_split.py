@@ -1,7 +1,8 @@
 """Subject-level stratified data splitting.
 
 Interface contract:
-    split_subjects(subject_ids, ratios=(0.7,0.15,0.15), seed=42) -> {'train': [...], 'val': [...], 'test': [...]}
+    split_subjects(subject_ids, ratios=(0.7,0.15,0.15), seed=42)
+        -> {'train': [...], 'val': [...], 'test': [...]}
 """
 
 import json
@@ -26,7 +27,7 @@ def split_subjects(
         subject_ids: List of subject IDs.
         ratios: (train_ratio, val_ratio, test_ratio).
         seed: Random seed.
-        stratify_labels: Optional (N_subjects,) array for stratification (e.g., age group).
+        stratify_labels: Optional (N_subjects,) array for stratification.
 
     Returns:
         {"train": [...], "val": [...], "test": [...]}
@@ -61,13 +62,17 @@ def split_subjects(
         val_idx, test_idx = train_test_split(
             temp_idx,
             test_size=n_test,
-            stratify=discretize(stratify_labels[temp_idx]) if len(np.unique(discretize(stratify_labels[temp_idx]))) > 1 else None,
+            stratify=(
+                discretize(stratify_labels[temp_idx])
+                if len(np.unique(discretize(stratify_labels[temp_idx]))) > 1
+                else None
+            ),
             random_state=seed,
         )
     else:
         train_idx = indices[:n_train]
-        val_idx = indices[n_train:n_train + n_val]
-        test_idx = indices[n_train + n_val:]
+        val_idx = indices[n_train : n_train + n_val]
+        test_idx = indices[n_train + n_val :]
 
     result = {
         "train": [subject_ids[i] for i in sorted(train_idx)],

@@ -5,9 +5,10 @@ Interface contract:
 """
 
 import logging
+
 import numpy as np
-from scipy.signal import butter, filtfilt, iirnotch, medfilt
 from scipy.interpolate import interp1d
+from scipy.signal import butter, filtfilt, iirnotch, medfilt
 
 logger = logging.getLogger(__name__)
 
@@ -54,10 +55,8 @@ def baseline_correction(signal: np.ndarray, fs: float) -> np.ndarray:
     return signal - baseline_600
 
 
-def resample_signal(
-    signal: np.ndarray, orig_fs: float, target_fs: float
-) -> np.ndarray:
-    """Resample signal to target sampling rate using linear interpolation with anti-aliasing."""
+def resample_signal(signal: np.ndarray, orig_fs: float, target_fs: float) -> np.ndarray:
+    """Resample signal with linear interpolation and anti-aliasing."""
     duration = len(signal) / orig_fs
     n_target = int(np.round(duration * target_fs))
     t_orig = np.arange(len(signal)) / orig_fs
@@ -69,7 +68,9 @@ def resample_signal(
         b, a = butter(4, nyq_target / (orig_fs / 2), btype="low")
         signal = filtfilt(b, a, signal)
 
-    interp = interp1d(t_orig, signal, kind="linear", bounds_error=False, fill_value="extrapolate")
+    interp = interp1d(
+        t_orig, signal, kind="linear", bounds_error=False, fill_value="extrapolate"
+    )
     return interp(t_target)
 
 
@@ -77,10 +78,13 @@ def detect_r_peaks(signal: np.ndarray, fs: float) -> np.ndarray:
     """Detect R-peaks using Pan-Tompkins via neurokit2."""
     try:
         import neurokit2 as nk
+
         _, info = nk.ecg_peaks(signal, sampling_rate=int(fs))
         r_peaks = info["ECG_R_Peaks"]
         if len(r_peaks) == 0:
-            logger.warning("No R-peaks found with neurokit2, falling back to simple peak detection")
+            logger.warning(
+                "No R-peaks found with neurokit2, falling back to simple peak detection"
+            )
             r_peaks = _simple_peak_detect(signal, fs)
         return r_peaks
     except Exception:
@@ -91,6 +95,7 @@ def detect_r_peaks(signal: np.ndarray, fs: float) -> np.ndarray:
 def _simple_peak_detect(signal: np.ndarray, fs: float) -> np.ndarray:
     """Simple peak detection fallback."""
     from scipy.signal import find_peaks
+
     min_dist = int(fs * 0.28)  # ~280ms minimum RR interval (214 bpm max)
     height = 0.5 * np.max(signal)
     peaks, _ = find_peaks(signal, distance=min_dist, height=height)
@@ -116,7 +121,7 @@ def process_ecg(
 ) -> tuple[np.ndarray, np.ndarray]:
     """Process raw ECG signal.
 
-    Pipeline: bandpass → notch → baseline correction → resample → normalize → R-peak detection
+    Pipeline: bandpass → notch → baseline correction → resample → normalize.
 
     Args:
         raw_signal: (N,) raw ECG samples at fs Hz.
@@ -153,5 +158,10 @@ def process_ecg(
     # 6. Detect R-peaks on resampled signal
     r_peaks = detect_r_peaks(signal_125hz, target_fs)
 
-    logger.info(f"ECG processed: {len(signal_125hz)} samples, {len(r_peaks)} R-peaks at {target_fs} Hz")
+    logger.info(
+        "ECG processed: %s samples, %s R-peaks at %s Hz",
+        len(signal_125hz),
+        len(r_peaks),
+        target_fs,
+    )
     return signal_125hz.astype(np.float32), r_peaks

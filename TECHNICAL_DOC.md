@@ -1,10 +1,10 @@
 # 基于穿戴式多模态生理信号的动态心肺功能评测系统 — 技术文档
 
-> **项目代号**: CardioFit  
-> **版本**: v2.0  
-> **框架**: TensorFlow / Keras（禁止 PyTorch）  
-> **最后更新**: 2026-05  
-> **作者**: 郭凌宇 / 北航生物与医学工程学院  
+> **项目代号**: CardioFit
+> **版本**: v2.0
+> **框架**: TensorFlow / Keras（禁止 PyTorch）
+> **最后更新**: 2026-05
+> **作者**: 郭凌宇 / 北航生物与医学工程学院
 
 ---
 
@@ -239,10 +239,10 @@ subject_001.h5
 ```python
 class ECGProcessor:
     """ECG信号预处理与特征提取"""
-    
+
     def __init__(self, fs: int = 500):
         self.fs = fs
-    
+
     def preprocess(self, ecg_raw: np.ndarray) -> np.ndarray:
         """
         预处理流程:
@@ -251,7 +251,7 @@ class ECGProcessor:
         3. 基线漂移校正: 中值滤波法 (200ms + 600ms 窗)
         """
         pass
-    
+
     def detect_r_peaks(self, ecg_filtered: np.ndarray) -> np.ndarray:
         """
         R峰检测算法:
@@ -260,7 +260,7 @@ class ECGProcessor:
         返回: R峰位置索引数组
         """
         pass
-    
+
     def extract_hrv(self, r_peaks: np.ndarray) -> dict:
         """
         HRV 特征提取:
@@ -269,7 +269,7 @@ class ECGProcessor:
         - 非线性: SD1, SD2 (Poincaré)
         """
         pass
-    
+
     def segment_beats(self, ecg: np.ndarray, r_peaks: np.ndarray,
                       pre_ms: int = 200, post_ms: int = 400) -> np.ndarray:
         """按R峰分割单个心搏，固定窗长"""
@@ -281,10 +281,10 @@ class ECGProcessor:
 ```python
 class PPGProcessor:
     """PPG信号预处理与特征提取"""
-    
+
     def __init__(self, fs: int = 100):
         self.fs = fs
-    
+
     def preprocess(self, ppg_raw: np.ndarray) -> np.ndarray:
         """
         1. 带通滤波: 0.5-8 Hz
@@ -292,11 +292,11 @@ class PPGProcessor:
         3. 归一化
         """
         pass
-    
+
     def detect_peaks_and_onsets(self, ppg: np.ndarray) -> tuple:
         """检测 PPG 波峰和波谷（起始点）"""
         pass
-    
+
     def extract_features(self, ppg: np.ndarray, peaks, onsets) -> dict:
         """
         PPG 特征:
@@ -314,10 +314,10 @@ class PPGProcessor:
 ```python
 class SCGProcessor:
     """SCG信号预处理与心脏机械事件识别"""
-    
+
     def __init__(self, fs: int = 800):
         self.fs = fs
-    
+
     def preprocess(self, scg_xyz: np.ndarray) -> np.ndarray:
         """
         1. 选择主轴 (通常为 z 轴 / 背腹方向)，或合成三轴
@@ -326,7 +326,7 @@ class SCGProcessor:
         4. 模板匹配集合平均 (ensemble averaging) 提升 SNR
         """
         pass
-    
+
     def detect_ao_ac(self, scg: np.ndarray, r_peaks: np.ndarray) -> dict:
         """
         识别关键心脏机械事件特征点:
@@ -334,23 +334,23 @@ class SCGProcessor:
         - AC: 主动脉瓣关闭
         - MC: 二尖瓣关闭
         - MO: 二尖瓣开启
-        
+
         方法: 基于R峰的窗口搜索 + 模板匹配
         """
         pass
-    
+
     def compute_sti(self, r_peaks, ao_points, ac_points, mc_points) -> dict:
         """
         计算收缩时间间隔 (STI):
         - IVCT: 等容收缩时间 (MC → AO)
-        - LVET: 左室射血时间 (AO → AC)  
+        - LVET: 左室射血时间 (AO → AC)
         - IVRT: 等容舒张时间 (AC → MO)
         - QS2: 电机械收缩期 (Q波 → AC)
         - PEP: 射血前期 (Q波 → AO)
         - Tei指数: (IVCT + IVRT) / LVET
         """
         pass
-    
+
     def extract_amplitude_features(self, scg_beats: np.ndarray) -> dict:
         """
         幅值特征:
@@ -360,7 +360,7 @@ class SCGProcessor:
         - RMS 能量
         """
         pass
-    
+
     def extract_frequency_features(self, scg_beats: np.ndarray) -> dict:
         """
         频域特征:
@@ -376,8 +376,8 @@ class SCGProcessor:
 ```python
 class MultiModalSync:
     """多模态信号时间对齐"""
-    
-    def align_signals(self, ecg, ppg, scg, 
+
+    def align_signals(self, ecg, ppg, scg,
                       ecg_fs, ppg_fs, scg_fs,
                       target_fs: int = 500) -> dict:
         """
@@ -394,7 +394,7 @@ class MultiModalSync:
 ```python
 class SignalQualityAssessor:
     """信号质量评估，剔除低质量片段"""
-    
+
     def assess_ecg_quality(self, ecg_beat: np.ndarray) -> float:
         """
         ECG质量评分 (0-1):
@@ -404,7 +404,7 @@ class SignalQualityAssessor:
         阈值: < 0.6 判定为低质量，丢弃
         """
         pass
-    
+
     def assess_scg_quality(self, scg_beat: np.ndarray) -> float:
         """
         SCG质量评分:
@@ -413,7 +413,7 @@ class SignalQualityAssessor:
         - 运动伪迹检测 (加速度突变)
         """
         pass
-    
+
     def assess_ppg_quality(self, ppg_beat: np.ndarray) -> float:
         """PPG 信号质量（饱和、脱落、运动等）"""
         pass
@@ -518,7 +518,7 @@ Signal (None, 125, 3)                Clinical (None, 10)
 ```python
 class SEBlock(Layer):
     """Squeeze-and-Excitation 通道注意力 (参考董雪论文)
-    
+
     GlobalAveragePooling → Dense(C//r, relu) → Dense(C, sigmoid) → channel-wise multiply
     """
     def __init__(self, reduction_ratio: int = 8, **kwargs):
@@ -544,11 +544,11 @@ class SEBlock(Layer):
 ```python
 class ResidualSEBlock(Layer):
     """ResNet 残差块 + SE 注意力
-    
+
     Conv1D(3,s) → BN → ReLU → Conv1D(3,1) → BN → SE → Add → ReLU
     可选 1×1 conv shortcut 用于维度匹配
     """
-    def __init__(self, filters, stride=1, use_1x1_conv=False, 
+    def __init__(self, filters, stride=1, use_1x1_conv=False,
                  kernel_regularizer=None, **kwargs):
         super().__init__(**kwargs)
         self.conv1 = Conv1D(filters, 3, padding="same", strides=stride,
@@ -558,7 +558,7 @@ class ResidualSEBlock(Layer):
                            kernel_regularizer=kernel_regularizer)
         self.bn2 = BatchNormalization()
         self.se = SEBlock()
-        
+
         self.shortcut_conv = None
         if use_1x1_conv:
             self.shortcut_conv = Conv1D(filters, 1, strides=stride,
@@ -569,7 +569,7 @@ class ResidualSEBlock(Layer):
         x = Activation("relu")(self.bn1(self.conv1(inputs)))
         x = self.bn2(self.conv2(x))
         x = self.se(x)
-        
+
         if self.shortcut_conv is not None:
             shortcut = self.shortcut_bn(self.shortcut_conv(inputs))
         else:

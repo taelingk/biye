@@ -28,7 +28,9 @@ def cosine_annealing(epoch: int, lr: float, total_epochs: int = 100) -> float:
 class CosineAnnealingCallback(tf.keras.callbacks.Callback):
     """Cosine annealing learning rate scheduler."""
 
-    def __init__(self, initial_lr: float = 0.001, total_epochs: int = 100, verbose: int = 1):
+    def __init__(
+        self, initial_lr: float = 0.001, total_epochs: int = 100, verbose: int = 1
+    ):
         super().__init__()
         self.initial_lr = initial_lr
         self.total_epochs = total_epochs

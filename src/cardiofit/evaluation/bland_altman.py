@@ -3,8 +3,8 @@
 Mirrors the paper's Bland-Altman plots (Figures 3.13-3.32).
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def bland_altman_analysis(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
@@ -36,7 +36,7 @@ def bland_altman_analysis(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     ci_mean = 1.96 * se_mean
 
     # Confidence intervals for LoA
-    se_loa = np.sqrt(3 * std_diff ** 2 / n)
+    se_loa = np.sqrt(3 * std_diff**2 / n)
     ci_loa = 1.96 * se_loa
 
     return {
@@ -83,19 +83,49 @@ def plot_bland_altman(
 
     fig, ax = plt.subplots(figsize=figsize)
 
-    ax.scatter(stats["means"], stats["diffs"], alpha=alpha, s=10, c="steelblue", edgecolors="none")
-    ax.axhline(y=stats["mean_diff"], color="red", linestyle="-", linewidth=1.5,
-               label=f"Mean diff: {stats['mean_diff']:.2f} {unit}")
-    ax.axhline(y=stats["loa_upper"], color="black", linestyle="--", linewidth=1,
-               label=f"+1.96 SD: {stats['loa_upper']:.2f} {unit}")
-    ax.axhline(y=stats["loa_lower"], color="black", linestyle="--", linewidth=1,
-               label=f"-1.96 SD: {stats['loa_lower']:.2f} {unit}")
+    ax.scatter(
+        stats["means"],
+        stats["diffs"],
+        alpha=alpha,
+        s=10,
+        c="steelblue",
+        edgecolors="none",
+    )
+    ax.axhline(
+        y=stats["mean_diff"],
+        color="red",
+        linestyle="-",
+        linewidth=1.5,
+        label=f"Mean diff: {stats['mean_diff']:.2f} {unit}",
+    )
+    ax.axhline(
+        y=stats["loa_upper"],
+        color="black",
+        linestyle="--",
+        linewidth=1,
+        label=f"+1.96 SD: {stats['loa_upper']:.2f} {unit}",
+    )
+    ax.axhline(
+        y=stats["loa_lower"],
+        color="black",
+        linestyle="--",
+        linewidth=1,
+        label=f"-1.96 SD: {stats['loa_lower']:.2f} {unit}",
+    )
 
     # CI bands for LoA
-    ax.axhline(y=stats["ci_loa_upper_lower"], color="gray", linestyle=":", linewidth=0.8)
-    ax.axhline(y=stats["ci_loa_upper_upper"], color="gray", linestyle=":", linewidth=0.8)
-    ax.axhline(y=stats["ci_loa_lower_lower"], color="gray", linestyle=":", linewidth=0.8)
-    ax.axhline(y=stats["ci_loa_lower_upper"], color="gray", linestyle=":", linewidth=0.8)
+    ax.axhline(
+        y=stats["ci_loa_upper_lower"], color="gray", linestyle=":", linewidth=0.8
+    )
+    ax.axhline(
+        y=stats["ci_loa_upper_upper"], color="gray", linestyle=":", linewidth=0.8
+    )
+    ax.axhline(
+        y=stats["ci_loa_lower_lower"], color="gray", linestyle=":", linewidth=0.8
+    )
+    ax.axhline(
+        y=stats["ci_loa_lower_upper"], color="gray", linestyle=":", linewidth=0.8
+    )
 
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
