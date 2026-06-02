@@ -117,9 +117,10 @@ tasks:
   - id: phase9-train
     phase: 9
     name: 真实数据训练
-    status: free
-    handler: ~
-    branch: ~
+    status: in_progress
+    handler: windows-5090d
+    branch: main
+    started: 2026-06-02
     depends_on: phase8-verify
     files_touched:
       - data/
