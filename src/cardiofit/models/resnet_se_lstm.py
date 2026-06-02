@@ -144,11 +144,20 @@ def build_multimodal_resnet_se_lstm(
     return model
 
 
-def compile_model(model: Model, learning_rate: float = 0.001, clipvalue: float = 1.0) -> Model:
+def compile_model(
+    model: Model,
+    learning_rate: float = 0.001,
+    clipvalue: float = 1.0,
+    loss_weights: Optional[dict[str, float]] = None,
+) -> Model:
     """Compile the model with paper-consistent settings.
 
     Dual Huber losses for CO and VO2max, Adam optimizer with gradient clipping.
     """
+    resolved_loss_weights = loss_weights or {
+        "co_output": 1.0,
+        "vo2_output": 1.0,
+    }
     model.compile(
         optimizer=tf.keras.optimizers.Adam(
             learning_rate=learning_rate,
@@ -161,10 +170,7 @@ def compile_model(model: Model, learning_rate: float = 0.001, clipvalue: float =
             "co_output": tf.keras.losses.Huber(delta=1.0),
             "vo2_output": tf.keras.losses.Huber(delta=1.0),
         },
-        loss_weights={
-            "co_output": 1.0,
-            "vo2_output": 1.0,
-        },
+        loss_weights=resolved_loss_weights,
         metrics={
             "co_output": ["mae"],
             "vo2_output": ["mae"],

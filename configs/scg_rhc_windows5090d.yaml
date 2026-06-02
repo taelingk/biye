@@ -74,7 +74,7 @@ training:
   huber_delta: 1.0
   loss_weights:
     co_output: 1.0
-    vo2_output: 1.0
+    vo2_output: 0.0
   clipvalue: 1.0
   augmentation:
     time_shift_prob: 0.3

@@ -103,7 +103,12 @@ def main():
         clinical_scale=std_params["clinical_std"].ravel(),
     )
 
-    compile_model(model, learning_rate=train_cfg["learning_rate"], clipvalue=train_cfg["clipvalue"])
+    compile_model(
+        model,
+        learning_rate=train_cfg["learning_rate"],
+        clipvalue=train_cfg["clipvalue"],
+        loss_weights=train_cfg.get("loss_weights"),
+    )
 
     if args.checkpoint:
         logger.info(f"Loading pre-trained weights from {args.checkpoint}")
