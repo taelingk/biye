@@ -1,0 +1,77 @@
+project:
+  name: CardioFit
+  seed: 42
+  version: "0.2.0"
+
+paths:
+  raw_data: data/raw
+  processed_data: data/processed
+  splits: data/splits
+  checkpoints: outputs/phase10_no_aug/checkpoints
+  logs: outputs/phase10_no_aug/logs
+  onnx: outputs/phase10_no_aug/onnx
+
+signal:
+  sampling_rate_target: 125
+  window_size: 125
+  window_before_r: 40
+  window_after_r: 85
+  channels: 3
+  ecg:
+    fs: 500
+    bandpass_low: 0.5
+    bandpass_high: 40.0
+    notch_freq: 50.0
+    notch_q: 30
+  ppg:
+    fs: 500
+    bandpass_low: 0.5
+    bandpass_high: 8.0
+    channel_ir: 0
+  scg:
+    fs: 500
+    bandpass_low: 1.0
+    bandpass_high: 40.0
+    axis_z: 0
+
+clinical_features:
+  names: [age, gender, weight, height, bsa, bmi, hr, sbp, dbp, pp]
+  n_features: 10
+
+model:
+  input_shape: [125, 3]
+  n_clinical: 10
+  lstm_units: 64
+  dense_units: 128
+  dropout: 0.3
+  dropout_shared: 0.2
+  l2_reg: 0.0000411
+  se_reduction: 8
+  output_names: [co_output, vo2_output]
+
+training:
+  batch_size: 32
+  max_epochs: 80
+  learning_rate: 0.001
+  early_stopping_patience: 12
+  optimizer: adam
+  loss: huber
+  huber_delta: 1.0
+  loss_weights:
+    co_output: 1.0
+    vo2_output: 0.0
+  clipvalue: 1.0
+  augmentation:
+    time_shift_prob: 0.0
+    time_shift_max: 0
+    noise_prob: 0.0
+    noise_std_ratio: 0.0
+
+data_split:
+  ratios: [0.7, 0.15, 0.15]
+  stratify_by: [age_group, gender, bmi_group]
+  split_method: per_subject
+
+output:
+  vo2_range: [10, 80]
+  co_range: [2, 30]

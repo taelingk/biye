@@ -40,6 +40,7 @@ data/clinical_scg_rhc.csv
 runs/
 checkpoints/
 outputs/
+phase9_artifacts.zip
 wandb/
 figures/
 logs/

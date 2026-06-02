@@ -13,6 +13,9 @@ ARTIFACT_PATHS = (
     Path("outputs/logs"),
     Path("outputs/evaluation"),
     Path("outputs/onnx"),
+    Path("outputs/phase10_regularized"),
+    Path("outputs/phase10_low_lr"),
+    Path("outputs/phase10_no_aug"),
     Path("data/splits"),
 )
 
