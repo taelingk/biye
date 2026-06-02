@@ -1,8 +1,8 @@
 # CardioFit Windows 5090D Handoff
 
-Last updated: 2026-06-02
+Last updated: 2026-06-02, after Phase 9 completion
 
-This file is the one-page handoff for continuing CardioFit training on the Windows 5090D machine.
+This file is the handoff for continuing CardioFit training and returning Phase 9 artifacts from the Windows 5090D machine.
 
 ## Current Project State
 
@@ -12,10 +12,10 @@ This file is the one-page handoff for continuing CardioFit training on the Windo
 - Also available: `feat/core-pipeline`
 - Task source of truth: `.tasks.yaml`
 - Phase 1-8: done
-- Phase 9: free, next task is real-data preprocessing and training on Windows 5090D.
-- Phase 10: free, depends on Phase 9 results.
+- Phase 9: done on Windows 5090D.
+- Phase 10: free, next task is model optimization and tuning from Phase 9 results.
 
-Note: `AI_CONTEXT.md` may still mention `feat/core-pipeline` as the active branch. As of this handoff, `main` contains the merged core pipeline and `.tasks.yaml` marks Phase 8 as done.
+Note: `AI_CONTEXT.md` may still mention `feat/core-pipeline` as the active branch. As of this handoff, `main` contains the merged core pipeline and `.tasks.yaml` marks Phase 9 as done.
 
 ## Start Here On Windows
 
@@ -48,31 +48,18 @@ Expected clean state:
 ## main...origin/main
 ```
 
-## Claim Phase 9 Before Training
+## Phase 9 Claim Status
 
-Open `.tasks.yaml` and change `phase9-train` from:
+Phase 9 is already marked done. Do not reclaim it unless the task table is intentionally reset.
 
-```yaml
-status: free
-handler: ~
-branch: ~
-```
-
-to:
+Expected `.tasks.yaml` state:
 
 ```yaml
-status: in_progress
+status: done
 handler: windows-5090d
 branch: main
 started: 2026-06-02
-```
-
-Then commit and push the claim:
-
-```bash
-git add .tasks.yaml
-git commit -m "chore: claim phase 9 training"
-git push
+completed: 2026-06-02
 ```
 
 Do not claim Phase 10 yet. Phase 10 starts only after real training outputs exist.
@@ -242,6 +229,18 @@ outputs/logs/
 outputs/evaluation/
 outputs/onnx/
 data/splits/
+```
+
+Preferred: package them into one zip on Windows 5090D:
+
+```bash
+python scripts/package_phase9_artifacts.py pack --output phase9_artifacts.zip
+```
+
+Then transfer `phase9_artifacts.zip` to the Mac project root and unpack:
+
+```bash
+python scripts/package_phase9_artifacts.py unpack phase9_artifacts.zip
 ```
 
 Do not commit large raw data unless explicitly intended. Check `.gitignore` before adding files.
