@@ -39,6 +39,7 @@ data/clinical_scg_rhc.csv
 # Training artifacts
 runs/
 checkpoints/
+outputs/
 wandb/
 figures/
 logs/

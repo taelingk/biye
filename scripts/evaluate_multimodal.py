@@ -12,7 +12,6 @@ import sys
 from pathlib import Path
 
 import numpy as np
-import tensorflow as tf
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -24,6 +23,7 @@ from src.cardiofit.evaluation.visualization import (
     plot_error_distribution,
     plot_prediction_scatter,
 )
+from src.cardiofit.models import load_multimodal_checkpoint
 from src.cardiofit.utils.logging import setup_logging
 
 logger = logging.getLogger(__name__)
@@ -33,6 +33,7 @@ def main():
     parser = argparse.ArgumentParser(description="Evaluate multimodal model")
     parser.add_argument("--config", type=str, default="configs/default.yaml")
     parser.add_argument("--checkpoint", type=str, required=True)
+    parser.add_argument("--standardization-params", type=str, default=None)
     parser.add_argument("--output-dir", type=str, default="outputs/evaluation")
     args = parser.parse_args()
 
@@ -48,14 +49,10 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # --- 1. Load model ---
-    model = tf.keras.models.load_model(
+    model = load_multimodal_checkpoint(
         args.checkpoint,
-        custom_objects={
-            "StandardizeSignalFlat": None,
-            "StandardizeClinical": None,
-            "Standardize1D": None,
-        },
-        compile=False,
+        args.config,
+        standardization_params=args.standardization_params,
     )
     logger.info(f"Loaded model from {args.checkpoint}")
 

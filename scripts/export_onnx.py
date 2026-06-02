@@ -20,6 +20,7 @@ import tf2onnx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from src.cardiofit.models import load_multimodal_checkpoint
 from src.cardiofit.utils.logging import setup_logging
 
 logger = logging.getLogger(__name__)
@@ -27,17 +28,31 @@ logger = logging.getLogger(__name__)
 
 def main():
     parser = argparse.ArgumentParser(description="Export model to ONNX")
+    parser.add_argument("--config", type=str, default="configs/default.yaml")
     parser.add_argument("--checkpoint", type=str, required=True)
+    parser.add_argument("--standardization-params", type=str, default=None)
     parser.add_argument(
         "--output", type=str, default="outputs/onnx/cardiofit_multimodal.onnx"
     )
     parser.add_argument("--opset", type=int, default=13)
+    parser.add_argument(
+        "--use-gpu",
+        action="store_true",
+        help="Use GPU during export; CPU export avoids CuDNN-only LSTM ops.",
+    )
     args = parser.parse_args()
 
     setup_logging()
+    if not args.use_gpu:
+        tf.config.set_visible_devices([], "GPU")
+        logger.info("GPU hidden for ONNX export to avoid CuDNN-only LSTM ops")
 
     # --- 1. Load model ---
-    model = tf.keras.models.load_model(args.checkpoint, compile=False)
+    model = load_multimodal_checkpoint(
+        args.checkpoint,
+        args.config,
+        standardization_params=args.standardization_params,
+    )
     logger.info(f"Loaded model from {args.checkpoint}")
     logger.info(f"Inputs: {[i.name for i in model.inputs]}")
     logger.info(f"Outputs: {[o.name for o in model.outputs]}")

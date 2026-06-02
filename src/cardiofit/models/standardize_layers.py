@@ -15,6 +15,7 @@ import tensorflow as tf
 from tensorflow.keras.layers import Layer
 
 
+@tf.keras.utils.register_keras_serializable(package="cardiofit")
 class Standardize1D(Layer):
     """Standardize a scalar feature: z = (x - mean) / (scale + eps).
 
@@ -46,6 +47,7 @@ class Standardize1D(Layer):
         return cfg
 
 
+@tf.keras.utils.register_keras_serializable(package="cardiofit")
 class StandardizeSignalFlat(Layer):
     """Standardize (None, window_size, channels) by flattening to (None, window_size*channels).
 
@@ -82,6 +84,8 @@ class StandardizeSignalFlat(Layer):
         cfg = super().get_config()
         cfg.update(
             {
+                "mean": self.mean.reshape(-1).tolist(),
+                "scale": self.scale.reshape(-1).tolist(),
                 "window_size": self.window_size,
                 "channels": self.channels,
                 "eps": self.eps,
@@ -90,6 +94,7 @@ class StandardizeSignalFlat(Layer):
         return cfg
 
 
+@tf.keras.utils.register_keras_serializable(package="cardiofit")
 class StandardizeClinical(Layer):
     """Standardize (None, n_features) clinical matrix — unified version for our project.
 

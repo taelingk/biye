@@ -9,6 +9,7 @@ Interface contracts:
 """
 
 from .resnet_se_lstm import build_multimodal_resnet_se_lstm, compile_model
+from .loading import load_multimodal_checkpoint
 from .se_block import ResidualSEBlock, SEBlock
 from .standardize_layers import (
     Standardize1D,
@@ -24,4 +25,5 @@ __all__ = [
     "Standardize1D",
     "StandardizeSignalFlat",
     "StandardizeClinical",
+    "load_multimodal_checkpoint",
 ]

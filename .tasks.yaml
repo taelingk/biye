@@ -117,15 +117,19 @@ tasks:
   - id: phase9-train
     phase: 9
     name: 真实数据训练
-    status: in_progress
+    status: done
     handler: windows-5090d
     branch: main
     started: 2026-06-02
+    completed: 2026-06-02
     depends_on: phase8-verify
     files_touched:
       - data/
       - outputs/checkpoints/
       - outputs/logs/
+      - outputs/evaluation/
+      - outputs/onnx/
+    note: Real-data training completed on Windows 5090D. Checkpoints, evaluation metrics, and ONNX export are available locally for Phase 10 tuning.
 
   - id: phase10-optimize
     phase: 10
