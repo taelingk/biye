@@ -44,6 +44,10 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W"]
+ignore = [
+  "E402",  # verify_pipeline.py uses phase-local imports for a readable smoke script.
+  "E501",  # Black handles formatting; long docstrings/log strings may remain >88 chars.
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -61,13 +61,17 @@ def split_subjects(
         val_idx, test_idx = train_test_split(
             temp_idx,
             test_size=n_test,
-            stratify=discretize(stratify_labels[temp_idx]) if len(np.unique(discretize(stratify_labels[temp_idx]))) > 1 else None,
+            stratify=(
+                discretize(stratify_labels[temp_idx])
+                if len(np.unique(discretize(stratify_labels[temp_idx]))) > 1
+                else None
+            ),
             random_state=seed,
         )
     else:
         train_idx = indices[:n_train]
-        val_idx = indices[n_train:n_train + n_val]
-        test_idx = indices[n_train + n_val:]
+        val_idx = indices[n_train : n_train + n_val]
+        test_idx = indices[n_train + n_val :]
 
     result = {
         "train": [subject_ids[i] for i in sorted(train_idx)],

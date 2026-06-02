@@ -18,13 +18,13 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.cardiofit.models import build_multimodal_resnet_se_lstm, compile_model
 from src.cardiofit.dataset import (
     build_tf_dataset,
     fit_standardization_params,
-    split_subjects,
     save_splits,
+    split_subjects,
 )
+from src.cardiofit.models import build_multimodal_resnet_se_lstm, compile_model
 from src.cardiofit.training.callbacks import get_callbacks
 from src.cardiofit.utils.logging import setup_logging
 
@@ -56,7 +56,9 @@ def main():
     # --- 1. Discover subjects ---
     subject_files = sorted(data_root.glob("*.h5"))
     if not subject_files:
-        logger.error(f"No HDF5 files found in {data_root}. Run build_preprocessed_dataset.py first.")
+        logger.error(
+            f"No HDF5 files found in {data_root}. Run build_preprocessed_dataset.py first."
+        )
         sys.exit(1)
     subject_ids = [f.stem for f in subject_files]
     logger.info(f"Found {len(subject_ids)} subjects: {subject_ids[:5]}...")
@@ -67,7 +69,9 @@ def main():
     train_ids = splits["train"]
     val_ids = splits["val"]
     test_ids = splits["test"]
-    logger.info(f"Split: train={len(train_ids)}, val={len(val_ids)}, test={len(test_ids)}")
+    logger.info(
+        f"Split: train={len(train_ids)}, val={len(val_ids)}, test={len(test_ids)}"
+    )
 
     # --- 3. Fit standardization params (training set only) ---
     std_params = fit_standardization_params(train_ids, data_root)
@@ -77,14 +81,23 @@ def main():
     batch_size = train_cfg["batch_size"]
 
     train_ds = build_tf_dataset(
-        train_ids, data_root, batch_size=batch_size,
-        shuffle=True, augment=True, seed=seed,
+        train_ids,
+        data_root,
+        batch_size=batch_size,
+        shuffle=True,
+        augment=True,
+        seed=seed,
     )
     val_ds = build_tf_dataset(
-        val_ids, data_root, batch_size=batch_size,
-        shuffle=False, augment=False,
+        val_ids,
+        data_root,
+        batch_size=batch_size,
+        shuffle=False,
+        augment=False,
     )
-    logger.info(f"Datasets ready: train={train_ds.cardinality().numpy()} batches, val={val_ds.cardinality().numpy()} batches")
+    logger.info(
+        f"Datasets ready: train={train_ds.cardinality().numpy()} batches, val={val_ds.cardinality().numpy()} batches"
+    )
 
     # --- 5. Build model ---
     model_cfg = cfg["model"]
@@ -140,8 +153,9 @@ def main():
 
     # Save standardization params for inference
     import joblib
+
     joblib.dump(std_params, str(checkpoint_dir / "standardization_params.pkl"))
-    logger.info(f"Standardization params saved")
+    logger.info("Standardization params saved")
 
     # Report best metrics
     best_epoch = np.argmin(history.history["val_loss"]) + 1

@@ -14,8 +14,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-
-DATASET_ROOT = "scg-rhc-wearable-seismocardiogram-signal-and-right-heart-catheter-database-1.0.0"
+DATASET_ROOT = (
+    "scg-rhc-wearable-seismocardiogram-signal-and-right-heart-catheter-database-1.0.0"
+)
 LOGGER = logging.getLogger(__name__)
 
 
@@ -54,7 +55,9 @@ def has_required_signal_columns(signal_names: list[str]) -> bool:
     return True
 
 
-def build_label_arrays(rhc_row: pd.Series, n_samples: int) -> tuple[np.ndarray, np.ndarray]:
+def build_label_arrays(
+    rhc_row: pd.Series, n_samples: int
+) -> tuple[np.ndarray, np.ndarray]:
     """Build single-target arrays expected by the existing raw-data pipeline."""
     co_ml_min = float(rhc_row["Avg. COmL/min"])
     co_l_min = co_ml_min / 1000.0
@@ -73,7 +76,9 @@ def build_clinical_row(record_id: str, metadata: dict) -> dict:
         "gender": 1 if gender.startswith("m") else 0,
         "weight_kg": metadata.get("weight", 70),
         "height_cm": metadata.get("height", 170),
-        "hr_bpm": _first_numeric(maclab, ["PAHR         ", "RAHR         ", "PCWHR        "], 70),
+        "hr_bpm": _first_numeric(
+            maclab, ["PAHR         ", "RAHR         ", "PCWHR        "], 70
+        ),
         "sbp": metadata.get("sbp", 120),
         "dbp": metadata.get("dbp", 80),
     }
@@ -119,14 +124,25 @@ def import_dataset(
                 shutil.rmtree(destination)
             destination.mkdir(parents=True)
 
-            np.save(destination / "ecg.npy", record.p_signal[:, selected["ecg"]].astype(np.float32))
-            np.save(destination / "ppg.npy", record.p_signal[:, selected["ppg"]].astype(np.float32))
-            np.save(destination / "scg.npy", record.p_signal[:, selected["scg"]].astype(np.float32))
+            np.save(
+                destination / "ecg.npy",
+                record.p_signal[:, selected["ecg"]].astype(np.float32),
+            )
+            np.save(
+                destination / "ppg.npy",
+                record.p_signal[:, selected["ppg"]].astype(np.float32),
+            )
+            np.save(
+                destination / "scg.npy",
+                record.p_signal[:, selected["scg"]].astype(np.float32),
+            )
             co, vo2 = build_label_arrays(rhc_row, n_samples=1)
             np.save(destination / "co_labels.npy", co)
             np.save(destination / "vo2_labels.npy", vo2)
 
-            metadata = json.loads((record_dir / f"{record_id}.json").read_text(encoding="utf-8"))
+            metadata = json.loads(
+                (record_dir / f"{record_id}.json").read_text(encoding="utf-8")
+            )
             clinical_rows.append(build_clinical_row(record_id, metadata))
             imported.append(record_id)
 
@@ -137,10 +153,14 @@ def import_dataset(
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
-    parser = argparse.ArgumentParser(description="Import SCG-RHC WFDB zip into CardioFit raw data.")
+    parser = argparse.ArgumentParser(
+        description="Import SCG-RHC WFDB zip into CardioFit raw data."
+    )
     parser.add_argument("--source-zip", required=True, type=Path)
     parser.add_argument("--output-raw", default=Path("data/raw"), type=Path)
-    parser.add_argument("--clinical-csv", default=Path("data/clinical_scg_rhc.csv"), type=Path)
+    parser.add_argument(
+        "--clinical-csv", default=Path("data/clinical_scg_rhc.csv"), type=Path
+    )
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--record", action="append", dest="records", default=None)
     args = parser.parse_args()
@@ -178,7 +198,9 @@ def _load_rhc_values(zf: zipfile.ZipFile) -> pd.DataFrame:
 def _discover_record_ids(zf: zipfile.ZipFile) -> list[str]:
     with zf.open(f"{DATASET_ROOT}/RECORDS") as handle:
         records = [line.decode("utf-8").strip() for line in handle if line.strip()]
-    return [Path(record).name for record in records if record.startswith("processed_data/")]
+    return [
+        Path(record).name for record in records if record.startswith("processed_data/")
+    ]
 
 
 def _rhc_row_for_record(rhc: pd.DataFrame, record_id: str) -> pd.Series | None:
@@ -188,10 +210,15 @@ def _rhc_row_for_record(rhc: pd.DataFrame, record_id: str) -> pd.Series | None:
     return matches.iloc[0]
 
 
-def _extract_record_files(zf: zipfile.ZipFile, record_id: str, destination: Path) -> None:
+def _extract_record_files(
+    zf: zipfile.ZipFile, record_id: str, destination: Path
+) -> None:
     for suffix in (".hea", ".dat", ".json"):
         member = f"{DATASET_ROOT}/processed_data/{record_id}{suffix}"
-        with zf.open(member) as src, (destination / f"{record_id}{suffix}").open("wb") as dst:
+        with (
+            zf.open(member) as src,
+            (destination / f"{record_id}{suffix}").open("wb") as dst,
+        ):
             shutil.copyfileobj(src, dst)
 
 

@@ -5,7 +5,7 @@ Mirrors the paper: R², Pearson r, MAE, RMSE, bias, limits of agreement.
 
 import numpy as np
 from scipy.stats import pearsonr
-from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 
 def compute_all_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
@@ -99,10 +99,9 @@ def compute_vo2max_per_subject(
         (n_subjects,) VO2max predictions.
     """
     unique_subjects = np.unique(subject_indices)
-    vo2max = np.array([
-        np.max(vo2_predictions[subject_indices == sid])
-        for sid in unique_subjects
-    ])
+    vo2max = np.array(
+        [np.max(vo2_predictions[subject_indices == sid]) for sid in unique_subjects]
+    )
     return vo2max
 
 
@@ -110,11 +109,15 @@ def format_metrics(metrics: dict, name: str = "") -> str:
     """Format metrics dict as a readable string."""
     lines = [f"--- {name} Metrics ---" if name else "--- Metrics ---"]
     lines.append(f"R²:           {metrics['r2']:.4f}")
-    lines.append(f"Pearson r:    {metrics['pearson_r']:.4f} (p={metrics['pearson_p']:.4f})")
+    lines.append(
+        f"Pearson r:    {metrics['pearson_r']:.4f} (p={metrics['pearson_p']:.4f})"
+    )
     lines.append(f"MAE:          {metrics['mae']:.4f}")
     lines.append(f"RMSE:         {metrics['rmse']:.4f}")
     lines.append(f"Bias:         {metrics['bias']:.4f}")
-    lines.append(f"LoA:          [{metrics['loa_lower']:.4f}, {metrics['loa_upper']:.4f}]")
+    lines.append(
+        f"LoA:          [{metrics['loa_lower']:.4f}, {metrics['loa_upper']:.4f}]"
+    )
     lines.append(f"Std Error:    {metrics['std_error']:.4f}")
     lines.append(f"N:            {metrics['n_samples']}")
     return "\n".join(lines)

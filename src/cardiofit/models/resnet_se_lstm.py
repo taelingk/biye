@@ -14,14 +14,20 @@ from typing import Optional
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import (
-    Input, Conv1D, BatchNormalization, Activation,
-    Dense, Dropout, LSTM, Concatenate,
+    LSTM,
+    Activation,
+    BatchNormalization,
+    Concatenate,
+    Conv1D,
+    Dense,
+    Dropout,
+    Input,
 )
 from tensorflow.keras.models import Model
 from tensorflow.keras.regularizers import l2
 
 from .se_block import ResidualSEBlock
-from .standardize_layers import StandardizeSignalFlat, StandardizeClinical
+from .standardize_layers import StandardizeClinical, StandardizeSignalFlat
 
 logger = logging.getLogger(__name__)
 
@@ -86,49 +92,106 @@ def build_multimodal_resnet_se_lstm(
     clinical_input = Input(shape=(n_clinical,), name="clinical_input", dtype=tf.float32)
 
     # --- Built-in Standardization ---
-    sig_mean = signal_mean if signal_mean is not None else np.zeros(signal_flat_dim, dtype=np.float32)
-    sig_scale = signal_scale if signal_scale is not None else np.ones(signal_flat_dim, dtype=np.float32)
-    x = StandardizeSignalFlat(sig_mean, sig_scale, window_size, channels, name="signal_standardize")(signal_input)
+    sig_mean = (
+        signal_mean
+        if signal_mean is not None
+        else np.zeros(signal_flat_dim, dtype=np.float32)
+    )
+    sig_scale = (
+        signal_scale
+        if signal_scale is not None
+        else np.ones(signal_flat_dim, dtype=np.float32)
+    )
+    x = StandardizeSignalFlat(
+        sig_mean, sig_scale, window_size, channels, name="signal_standardize"
+    )(signal_input)
 
-    clin_mean = clinical_mean if clinical_mean is not None else np.zeros(n_clinical, dtype=np.float32)
-    clin_scale = clinical_scale if clinical_scale is not None else np.ones(n_clinical, dtype=np.float32)
-    clin_std = StandardizeClinical(clin_mean, clin_scale, name="clinical_standardize")(clinical_input)
+    clin_mean = (
+        clinical_mean
+        if clinical_mean is not None
+        else np.zeros(n_clinical, dtype=np.float32)
+    )
+    clin_scale = (
+        clinical_scale
+        if clinical_scale is not None
+        else np.ones(n_clinical, dtype=np.float32)
+    )
+    clin_std = StandardizeClinical(clin_mean, clin_scale, name="clinical_standardize")(
+        clinical_input
+    )
 
     # --- ResNet18 Backbone ---
     # Initial conv
-    x = Conv1D(64, 7, strides=2, padding="same", kernel_regularizer=regularizer, name="conv1")(x)
+    x = Conv1D(
+        64, 7, strides=2, padding="same", kernel_regularizer=regularizer, name="conv1"
+    )(x)
     x = BatchNormalization(name="bn1")(x)
     x = Activation("relu", name="act1")(x)
 
     # Group 1: 64 filters, stride 1, 2 blocks
     for i in range(2):
-        x = ResidualSEBlock(64, kernel_regularizer=regularizer, name=f"res_se_block_64_{i}")(x)
+        x = ResidualSEBlock(
+            64, kernel_regularizer=regularizer, name=f"res_se_block_64_{i}"
+        )(x)
 
     # Group 2: 128 filters, stride 2, 2 blocks
-    x = ResidualSEBlock(128, stride=2, use_1x1_conv=True, kernel_regularizer=regularizer, name="res_se_block_128_0")(x)
+    x = ResidualSEBlock(
+        128,
+        stride=2,
+        use_1x1_conv=True,
+        kernel_regularizer=regularizer,
+        name="res_se_block_128_0",
+    )(x)
     for i in range(1):
-        x = ResidualSEBlock(128, kernel_regularizer=regularizer, name=f"res_se_block_128_{i+1}")(x)
+        x = ResidualSEBlock(
+            128, kernel_regularizer=regularizer, name=f"res_se_block_128_{i+1}"
+        )(x)
 
     # Group 3: 256 filters, stride 2, 2 blocks
-    x = ResidualSEBlock(256, stride=2, use_1x1_conv=True, kernel_regularizer=regularizer, name="res_se_block_256_0")(x)
+    x = ResidualSEBlock(
+        256,
+        stride=2,
+        use_1x1_conv=True,
+        kernel_regularizer=regularizer,
+        name="res_se_block_256_0",
+    )(x)
     for i in range(1):
-        x = ResidualSEBlock(256, kernel_regularizer=regularizer, name=f"res_se_block_256_{i+1}")(x)
+        x = ResidualSEBlock(
+            256, kernel_regularizer=regularizer, name=f"res_se_block_256_{i+1}"
+        )(x)
 
     # Group 4: 512 filters, stride 1, 1 block
-    x = ResidualSEBlock(512, stride=1, use_1x1_conv=True, kernel_regularizer=regularizer, name="res_se_block_512")(x)
+    x = ResidualSEBlock(
+        512,
+        stride=1,
+        use_1x1_conv=True,
+        kernel_regularizer=regularizer,
+        name="res_se_block_512",
+    )(x)
 
     # --- LSTM ---
-    x = LSTM(lstm_units, return_sequences=False, kernel_regularizer=regularizer, name="lstm")(x)
+    x = LSTM(
+        lstm_units, return_sequences=False, kernel_regularizer=regularizer, name="lstm"
+    )(x)
 
     # --- Feature Dense ---
-    x = Dense(dense_units, activation="relu", kernel_regularizer=regularizer, name="dense_features")(x)
+    x = Dense(
+        dense_units,
+        activation="relu",
+        kernel_regularizer=regularizer,
+        name="dense_features",
+    )(x)
     x = Dropout(dropout, name="dropout_features")(x)
 
     # --- Concatenate Clinical Features ---
-    x = Concatenate(name="concat_clinical")([x, clin_std])  # (None, dense_units + 10) = (None, 138)
+    x = Concatenate(name="concat_clinical")(
+        [x, clin_std]
+    )  # (None, dense_units + 10) = (None, 138)
 
     # --- Shared Dense ---
-    x = Dense(64, activation="relu", kernel_regularizer=regularizer, name="dense_shared")(x)
+    x = Dense(
+        64, activation="relu", kernel_regularizer=regularizer, name="dense_shared"
+    )(x)
     x = Dropout(dropout_shared, name="dropout_shared")(x)
 
     # --- Dual Output Heads ---

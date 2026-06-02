@@ -3,13 +3,17 @@
 Reference: ~/code/codongxue/src/training/train_svco_model.py (lines 354-434)
 """
 
-import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import (
-    Conv1D, BatchNormalization, Activation, Add,
-    GlobalAveragePooling1D, Dense, Multiply, Reshape, Layer,
+    Activation,
+    BatchNormalization,
+    Conv1D,
+    Dense,
+    GlobalAveragePooling1D,
+    Layer,
+    Multiply,
+    Reshape,
 )
-from tensorflow.keras.regularizers import l2
 
 
 class SEBlock(Layer):
@@ -67,17 +71,27 @@ class ResidualSEBlock(Layer):
         self._use_1x1_conv = use_1x1_conv
         self.kernel_regularizer = kernel_regularizer
 
-        self.conv1 = Conv1D(filters, 3, padding="same", strides=stride, kernel_regularizer=kernel_regularizer)
+        self.conv1 = Conv1D(
+            filters,
+            3,
+            padding="same",
+            strides=stride,
+            kernel_regularizer=kernel_regularizer,
+        )
         self.bn1 = BatchNormalization()
         self.act1 = Activation("relu")
-        self.conv2 = Conv1D(filters, 3, padding="same", kernel_regularizer=kernel_regularizer)
+        self.conv2 = Conv1D(
+            filters, 3, padding="same", kernel_regularizer=kernel_regularizer
+        )
         self.bn2 = BatchNormalization()
         self.se = SEBlock()
 
         self.shortcut_conv = None
         self.shortcut_bn = None
         if use_1x1_conv:
-            self.shortcut_conv = Conv1D(filters, 1, strides=stride, kernel_regularizer=kernel_regularizer)
+            self.shortcut_conv = Conv1D(
+                filters, 1, strides=stride, kernel_regularizer=kernel_regularizer
+            )
             self.shortcut_bn = BatchNormalization()
         self.act2 = Activation("relu")
 
@@ -94,18 +108,25 @@ class ResidualSEBlock(Layer):
 
     def get_config(self):
         config = super().get_config()
-        config.update({
-            "filters": self.filters,
-            "stride": self.stride,
-            "use_1x1_conv": self._use_1x1_conv,
-            "kernel_regularizer": tf.keras.regularizers.serialize(self.kernel_regularizer)
-            if self.kernel_regularizer else None,
-        })
+        config.update(
+            {
+                "filters": self.filters,
+                "stride": self.stride,
+                "use_1x1_conv": self._use_1x1_conv,
+                "kernel_regularizer": (
+                    tf.keras.regularizers.serialize(self.kernel_regularizer)
+                    if self.kernel_regularizer
+                    else None
+                ),
+            }
+        )
         return config
 
     @classmethod
     def from_config(cls, config):
         kernel_regularizer_config = config.pop("kernel_regularizer", None)
         if kernel_regularizer_config:
-            config["kernel_regularizer"] = tf.keras.regularizers.deserialize(kernel_regularizer_config)
+            config["kernel_regularizer"] = tf.keras.regularizers.deserialize(
+                kernel_regularizer_config
+            )
         return cls(**config)

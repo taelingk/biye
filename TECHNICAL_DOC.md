@@ -1,9 +1,9 @@
 # 基于穿戴式多模态生理信号的动态心肺功能评测系统 — 技术文档
 
-> **项目代号**: CardioFit  
-> **版本**: v1.0  
-> **最后更新**: 2025-11  
-> **作者**: 郭凌宇 / 北航生物与医学工程学院  
+> **项目代号**: CardioFit
+> **版本**: v1.0
+> **最后更新**: 2025-11
+> **作者**: 郭凌宇 / 北航生物与医学工程学院
 
 ---
 
@@ -289,10 +289,10 @@ subject_001.h5
 ```python
 class ECGProcessor:
     """ECG信号预处理与特征提取"""
-    
+
     def __init__(self, fs: int = 500):
         self.fs = fs
-    
+
     def preprocess(self, ecg_raw: np.ndarray) -> np.ndarray:
         """
         预处理流程:
@@ -301,7 +301,7 @@ class ECGProcessor:
         3. 基线漂移校正: 中值滤波法 (200ms + 600ms 窗)
         """
         pass
-    
+
     def detect_r_peaks(self, ecg_filtered: np.ndarray) -> np.ndarray:
         """
         R峰检测算法:
@@ -310,7 +310,7 @@ class ECGProcessor:
         返回: R峰位置索引数组
         """
         pass
-    
+
     def extract_hrv(self, r_peaks: np.ndarray) -> dict:
         """
         HRV 特征提取:
@@ -319,7 +319,7 @@ class ECGProcessor:
         - 非线性: SD1, SD2 (Poincaré)
         """
         pass
-    
+
     def segment_beats(self, ecg: np.ndarray, r_peaks: np.ndarray,
                       pre_ms: int = 200, post_ms: int = 400) -> np.ndarray:
         """按R峰分割单个心搏，固定窗长"""
@@ -331,10 +331,10 @@ class ECGProcessor:
 ```python
 class PPGProcessor:
     """PPG信号预处理与特征提取"""
-    
+
     def __init__(self, fs: int = 100):
         self.fs = fs
-    
+
     def preprocess(self, ppg_raw: np.ndarray) -> np.ndarray:
         """
         1. 带通滤波: 0.5-8 Hz
@@ -342,11 +342,11 @@ class PPGProcessor:
         3. 归一化
         """
         pass
-    
+
     def detect_peaks_and_onsets(self, ppg: np.ndarray) -> tuple:
         """检测 PPG 波峰和波谷（起始点）"""
         pass
-    
+
     def extract_features(self, ppg: np.ndarray, peaks, onsets) -> dict:
         """
         PPG 特征:
@@ -364,10 +364,10 @@ class PPGProcessor:
 ```python
 class SCGProcessor:
     """SCG信号预处理与心脏机械事件识别"""
-    
+
     def __init__(self, fs: int = 800):
         self.fs = fs
-    
+
     def preprocess(self, scg_xyz: np.ndarray) -> np.ndarray:
         """
         1. 选择主轴 (通常为 z 轴 / 背腹方向)，或合成三轴
@@ -376,7 +376,7 @@ class SCGProcessor:
         4. 模板匹配集合平均 (ensemble averaging) 提升 SNR
         """
         pass
-    
+
     def detect_ao_ac(self, scg: np.ndarray, r_peaks: np.ndarray) -> dict:
         """
         识别关键心脏机械事件特征点:
@@ -384,23 +384,23 @@ class SCGProcessor:
         - AC: 主动脉瓣关闭
         - MC: 二尖瓣关闭
         - MO: 二尖瓣开启
-        
+
         方法: 基于R峰的窗口搜索 + 模板匹配
         """
         pass
-    
+
     def compute_sti(self, r_peaks, ao_points, ac_points, mc_points) -> dict:
         """
         计算收缩时间间隔 (STI):
         - IVCT: 等容收缩时间 (MC → AO)
-        - LVET: 左室射血时间 (AO → AC)  
+        - LVET: 左室射血时间 (AO → AC)
         - IVRT: 等容舒张时间 (AC → MO)
         - QS2: 电机械收缩期 (Q波 → AC)
         - PEP: 射血前期 (Q波 → AO)
         - Tei指数: (IVCT + IVRT) / LVET
         """
         pass
-    
+
     def extract_amplitude_features(self, scg_beats: np.ndarray) -> dict:
         """
         幅值特征:
@@ -410,7 +410,7 @@ class SCGProcessor:
         - RMS 能量
         """
         pass
-    
+
     def extract_frequency_features(self, scg_beats: np.ndarray) -> dict:
         """
         频域特征:
@@ -426,8 +426,8 @@ class SCGProcessor:
 ```python
 class MultiModalSync:
     """多模态信号时间对齐"""
-    
-    def align_signals(self, ecg, ppg, scg, 
+
+    def align_signals(self, ecg, ppg, scg,
                       ecg_fs, ppg_fs, scg_fs,
                       target_fs: int = 500) -> dict:
         """
@@ -444,7 +444,7 @@ class MultiModalSync:
 ```python
 class SignalQualityAssessor:
     """信号质量评估，剔除低质量片段"""
-    
+
     def assess_ecg_quality(self, ecg_beat: np.ndarray) -> float:
         """
         ECG质量评分 (0-1):
@@ -454,7 +454,7 @@ class SignalQualityAssessor:
         阈值: < 0.6 判定为低质量，丢弃
         """
         pass
-    
+
     def assess_scg_quality(self, scg_beat: np.ndarray) -> float:
         """
         SCG质量评分:
@@ -463,7 +463,7 @@ class SignalQualityAssessor:
         - 运动伪迹检测 (加速度突变)
         """
         pass
-    
+
     def assess_ppg_quality(self, ppg_beat: np.ndarray) -> float:
         """PPG 信号质量（饱和、脱落、运动等）"""
         pass
@@ -570,8 +570,8 @@ class SignalQualityAssessor:
 ```python
 class SignalEncoder(nn.Module):
     """通用的单模态信号编码器"""
-    
-    def __init__(self, 
+
+    def __init__(self,
                  in_channels: int,        # ECG=1, PPG=2, SCG=3
                  base_filters: int = 64,
                  n_res_blocks: int = 4,
@@ -579,7 +579,7 @@ class SignalEncoder(nn.Module):
                  hidden_dim: int = 128,
                  output_dim: int = 128):
         super().__init__()
-        
+
         # Stage 1: 1D-CNN 局部特征提取
         self.cnn = nn.Sequential(
             ResBlock1D(in_channels, base_filters, kernel_size=15, stride=2),
@@ -587,23 +587,23 @@ class SignalEncoder(nn.Module):
             ResBlock1D(base_filters*2, base_filters*4, kernel_size=5, stride=2),
             ResBlock1D(base_filters*4, hidden_dim, kernel_size=3, stride=2),
         )
-        
+
         # Stage 2: 时序建模
         if seq_model == "bilstm":
-            self.seq = nn.LSTM(hidden_dim, hidden_dim//2, 
-                              num_layers=2, bidirectional=True, 
+            self.seq = nn.LSTM(hidden_dim, hidden_dim//2,
+                              num_layers=2, bidirectional=True,
                               batch_first=True, dropout=0.3)
         elif seq_model == "transformer":
             encoder_layer = nn.TransformerEncoderLayer(
-                d_model=hidden_dim, nhead=8, 
+                d_model=hidden_dim, nhead=8,
                 dim_feedforward=256, dropout=0.1
             )
             self.seq = nn.TransformerEncoder(encoder_layer, num_layers=4)
-        
+
         # Stage 3: 全局池化 → 嵌入
         self.pool = nn.AdaptiveAvgPool1d(1)
         self.proj = nn.Linear(hidden_dim, output_dim)
-    
+
     def forward(self, x):
         # x: (B, C, L)
         h = self.cnn(x)           # (B, hidden_dim, L')
@@ -627,12 +627,12 @@ class ResBlock1D(nn.Module):
         self.bn2 = nn.BatchNorm1d(out_ch)
         self.relu = nn.ReLU(inplace=True)
         self.dropout = nn.Dropout(0.2)
-        
+
         self.shortcut = nn.Sequential(
             nn.Conv1d(in_ch, out_ch, 1, stride),
             nn.BatchNorm1d(out_ch)
         ) if in_ch != out_ch or stride != 1 else nn.Identity()
-    
+
     def forward(self, x):
         residual = self.shortcut(x)
         out = self.relu(self.bn1(self.conv1(x)))
@@ -646,13 +646,13 @@ class ResBlock1D(nn.Module):
 ```python
 class AttentionFusion(nn.Module):
     """中期融合: 多头注意力加权融合"""
-    
+
     def __init__(self, embed_dim: int = 128, n_modalities: int = 3):
         super().__init__()
         self.attention = nn.MultiheadAttention(embed_dim, num_heads=4)
         self.norm = nn.LayerNorm(embed_dim)
         self.fc = nn.Linear(embed_dim * n_modalities, embed_dim)
-    
+
     def forward(self, ecg_emb, ppg_emb, scg_emb):
         # 堆叠为序列: (3, B, D)
         tokens = torch.stack([ecg_emb, ppg_emb, scg_emb], dim=0)
@@ -665,13 +665,13 @@ class AttentionFusion(nn.Module):
 
 class EarlyFusion(nn.Module):
     """早期融合: 输入层通道拼接"""
-    
+
     def __init__(self, ecg_len, ppg_len, scg_len, target_len=2000):
         super().__init__()
         # 将不同长度信号重采样到统一长度后按通道拼接
         # ECG: 1ch, PPG: 2ch, SCG: 3ch → 总共 6 通道
         self.resample_target = target_len
-    
+
     def forward(self, ecg, ppg, scg):
         # 重采样到统一长度
         ecg_r = F.interpolate(ecg, self.resample_target)
@@ -682,7 +682,7 @@ class EarlyFusion(nn.Module):
 
 class LateFusion(nn.Module):
     """晚期融合: 决策层自适应加权"""
-    
+
     def __init__(self, embed_dim: int = 128, n_modalities: int = 3):
         super().__init__()
         self.weight_net = nn.Sequential(
@@ -691,7 +691,7 @@ class LateFusion(nn.Module):
             nn.Linear(64, n_modalities),
             nn.Softmax(dim=-1)
         )
-    
+
     def forward(self, ecg_emb, ppg_emb, scg_emb):
         combined = torch.cat([ecg_emb, ppg_emb, scg_emb], dim=-1)
         weights = self.weight_net(combined)  # (B, 3)
@@ -705,23 +705,23 @@ class LateFusion(nn.Module):
 ```python
 class CardioFitNet(nn.Module):
     """多模态心肺功能评估主模型"""
-    
+
     def __init__(self, config):
         super().__init__()
         embed_dim = config.embed_dim  # 128
-        
+
         # 单模态编码器
         self.ecg_encoder = SignalEncoder(in_channels=1, output_dim=embed_dim)
         self.ppg_encoder = SignalEncoder(in_channels=2, output_dim=embed_dim)
         self.scg_encoder = SignalEncoder(in_channels=3, output_dim=embed_dim)
-        
+
         # 人口学特征编码
         self.demo_encoder = nn.Sequential(
             nn.Linear(5, 32),  # age, sex, height, weight, bmi
             nn.ReLU(),
             nn.Linear(32, embed_dim)
         )
-        
+
         # 融合层 (可切换策略)
         fusion_type = config.fusion_type  # "early" | "mid" | "late"
         if fusion_type == "mid":
@@ -731,7 +731,7 @@ class CardioFitNet(nn.Module):
         elif fusion_type == "early":
             self.fusion = EarlyFusion(...)
             self.unified_encoder = SignalEncoder(in_channels=6, output_dim=embed_dim)
-        
+
         # 回归头
         fused_dim = embed_dim + embed_dim  # signal fusion + demographics
         self.shared_fc = nn.Sequential(
@@ -743,11 +743,11 @@ class CardioFitNet(nn.Module):
         )
         self.vo2max_head = nn.Linear(128, 1)
         self.co_head = nn.Linear(128, 1)
-    
+
     def forward(self, ecg, ppg, scg, demographics):
         """
         Args:
-            ecg: (B, 1, L_ecg) 
+            ecg: (B, 1, L_ecg)
             ppg: (B, 2, L_ppg)
             scg: (B, 3, L_scg)
             demographics: (B, 5) [age, sex, height, weight, bmi]
@@ -759,14 +759,14 @@ class CardioFitNet(nn.Module):
         ppg_emb = self.ppg_encoder(ppg)
         scg_emb = self.scg_encoder(scg)
         demo_emb = self.demo_encoder(demographics)
-        
+
         signal_fused, attn_weights = self.fusion(ecg_emb, ppg_emb, scg_emb)
         combined = torch.cat([signal_fused, demo_emb], dim=-1)
-        
+
         shared = self.shared_fc(combined)
         vo2max_pred = self.vo2max_head(shared)
         co_pred = self.co_head(shared)
-        
+
         return {
             "vo2max": vo2max_pred,
             "co": co_pred,
@@ -845,19 +845,19 @@ system:
 ```python
 class CardioFitLoss(nn.Module):
     """多任务联合损失"""
-    
+
     def __init__(self, vo2_weight=1.0, co_weight=1.0, loss_type="huber"):
         super().__init__()
         self.vo2_weight = vo2_weight
         self.co_weight = co_weight
-        
+
         if loss_type == "mse":
             self.criterion = nn.MSELoss()
         elif loss_type == "huber":
             self.criterion = nn.HuberLoss(delta=1.0)
         elif loss_type == "smooth_l1":
             self.criterion = nn.SmoothL1Loss()
-    
+
     def forward(self, pred, target):
         loss_vo2 = self.criterion(pred["vo2max"], target["vo2max"])
         loss_co = self.criterion(pred["co"], target["co"])
@@ -1142,7 +1142,7 @@ def generate_synthetic_data(n_subjects=20, n_beats=100):
         scg = simulate_scg(duration=300, fs=800)
         vo2max = np.random.normal(40, 10)  # 模拟VO2max分布
         co = np.random.normal(5, 1.5)       # 模拟CO分布
-        yield {"ecg": ecg, "ppg": ppg, "scg": scg, 
+        yield {"ecg": ecg, "ppg": ppg, "scg": scg,
                "vo2max": vo2max, "co": co}
 ```
 

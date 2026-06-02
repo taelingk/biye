@@ -5,6 +5,7 @@ Interface contract:
 """
 
 import logging
+
 import numpy as np
 
 logger = logging.getLogger(__name__)
@@ -62,7 +63,9 @@ def extract_windows(
         segments.append(stacked)
 
     if len(segments) == 0:
-        logger.warning("No valid windows extracted. Check R-peak positions and signal length.")
+        logger.warning(
+            "No valid windows extracted. Check R-peak positions and signal length."
+        )
         return np.empty((0, window_size, 3), dtype=np.float32)
 
     result = np.array(segments, dtype=np.float32)

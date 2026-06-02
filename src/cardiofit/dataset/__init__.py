@@ -6,9 +6,14 @@ Interface contracts:
     split_subjects(subject_ids, ratios, seed) -> {'train': [...], 'val': [...], 'test': [...]}
 """
 
-from .hdf5_loader import load_subject, load_multiple_subjects, build_tf_dataset, fit_standardization_params
-from .data_split import split_subjects, save_splits, load_splits
 from .augmentation import augment_segment_tf, tf_augment_wrapper
+from .data_split import load_splits, save_splits, split_subjects
+from .hdf5_loader import (
+    build_tf_dataset,
+    fit_standardization_params,
+    load_multiple_subjects,
+    load_subject,
+)
 
 __all__ = [
     "load_subject",

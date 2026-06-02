@@ -5,9 +5,10 @@ Interface contract:
 """
 
 import logging
+
 import numpy as np
-from scipy.signal import butter, filtfilt
 from scipy.interpolate import interp1d
+from scipy.signal import butter, filtfilt
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +28,7 @@ def apply_bandpass_filter(
     return filtfilt(b, a, signal)
 
 
-def resample_signal(
-    signal: np.ndarray, orig_fs: float, target_fs: float
-) -> np.ndarray:
+def resample_signal(signal: np.ndarray, orig_fs: float, target_fs: float) -> np.ndarray:
     """Resample with anti-aliasing filter for downsampling."""
     duration = len(signal) / orig_fs
     n_target = int(np.round(duration * target_fs))
@@ -42,7 +41,9 @@ def resample_signal(
 
     t_orig = np.arange(len(signal)) / orig_fs
     t_target = np.linspace(0, duration, n_target, endpoint=False)
-    interp = interp1d(t_orig, signal, kind="linear", bounds_error=False, fill_value="extrapolate")
+    interp = interp1d(
+        t_orig, signal, kind="linear", bounds_error=False, fill_value="extrapolate"
+    )
     return interp(t_target)
 
 
@@ -51,7 +52,9 @@ def select_z_axis(raw_signal: np.ndarray, axis_z: int) -> np.ndarray:
     if raw_signal.ndim == 1:
         return raw_signal
     if raw_signal.shape[1] <= axis_z:
-        logger.warning(f"axis_z={axis_z} out of range for {raw_signal.shape[1]} channels, using channel 0")
+        logger.warning(
+            f"axis_z={axis_z} out of range for {raw_signal.shape[1]} channels, using channel 0"
+        )
         return raw_signal[:, 0]
     return raw_signal[:, axis_z]
 

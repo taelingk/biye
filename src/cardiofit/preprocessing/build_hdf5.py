@@ -9,12 +9,11 @@ from pathlib import Path
 
 import h5py
 import numpy as np
-import yaml
 
 from .ecg_processor import process_ecg
 from .ppg_processor import process_ppg
 from .scg_processor import process_scg
-from .sync_and_segment import extract_windows, compute_hr_from_r_peaks
+from .sync_and_segment import compute_hr_from_r_peaks, extract_windows
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +37,7 @@ def compute_clinical_features(
     height = float(clinical_raw["height_cm"])
 
     # BSA: Du Bois formula
-    bsa = 0.007184 * (weight ** 0.425) * (height ** 0.725)
+    bsa = 0.007184 * (weight**0.425) * (height**0.725)
 
     # BMI
     height_m = height / 100.0
@@ -53,7 +52,9 @@ def compute_clinical_features(
     dbp = float(clinical_raw.get("dbp", 80))
     pp = sbp - dbp
 
-    return np.array([age, gender, weight, height, bsa, bmi, hr, sbp, dbp, pp], dtype=np.float32)
+    return np.array(
+        [age, gender, weight, height, bsa, bmi, hr, sbp, dbp, pp], dtype=np.float32
+    )
 
 
 def compute_co_target(sv: np.ndarray, hr: np.ndarray) -> np.ndarray:
@@ -100,27 +101,38 @@ def build_subject_hdf5(
     # Preprocess each modality
     ecg_cfg = sig_cfg["ecg"]
     ecg_125, r_peaks = process_ecg(
-        ecg_raw, fs=ecg_cfg["fs"],
-        bp_low=ecg_cfg["bandpass_low"], bp_high=ecg_cfg["bandpass_high"],
-        notch_freq=ecg_cfg["notch_freq"], target_fs=target_fs,
+        ecg_raw,
+        fs=ecg_cfg["fs"],
+        bp_low=ecg_cfg["bandpass_low"],
+        bp_high=ecg_cfg["bandpass_high"],
+        notch_freq=ecg_cfg["notch_freq"],
+        target_fs=target_fs,
     )
 
     ppg_cfg = sig_cfg["ppg"]
     ppg_125 = process_ppg(
-        ppg_raw, fs=ppg_cfg["fs"], ch_ir=ppg_cfg["channel_ir"],
-        bp_low=ppg_cfg["bandpass_low"], bp_high=ppg_cfg["bandpass_high"],
+        ppg_raw,
+        fs=ppg_cfg["fs"],
+        ch_ir=ppg_cfg["channel_ir"],
+        bp_low=ppg_cfg["bandpass_low"],
+        bp_high=ppg_cfg["bandpass_high"],
         target_fs=target_fs,
     )
 
     scg_cfg = sig_cfg["scg"]
     scg_125 = process_scg(
-        scg_raw, fs=scg_cfg["fs"], axis_z=scg_cfg["axis_z"],
-        bp_low=scg_cfg["bandpass_low"], bp_high=scg_cfg["bandpass_high"],
+        scg_raw,
+        fs=scg_cfg["fs"],
+        axis_z=scg_cfg["axis_z"],
+        bp_low=scg_cfg["bandpass_low"],
+        bp_high=scg_cfg["bandpass_high"],
         target_fs=target_fs,
     )
 
     # Extract windows
-    segments = extract_windows(ecg_125, ppg_125, scg_125, r_peaks, window_size, before_r)
+    segments = extract_windows(
+        ecg_125, ppg_125, scg_125, r_peaks, window_size, before_r
+    )
     n_windows = len(segments)
 
     if n_windows == 0:
@@ -170,8 +182,16 @@ def _load_signal(csv_path: Path, npy_path: Path) -> np.ndarray:
 
 def _load_labels(subj_raw: Path, n_windows: int) -> tuple[np.ndarray, np.ndarray]:
     """Load CO and VO2 labels, interpolating timeseries to window count if needed."""
-    co_file = subj_raw / "co_labels.csv" if (subj_raw / "co_labels.csv").exists() else subj_raw / "co_labels.npy"
-    vo2_file = subj_raw / "vo2_labels.csv" if (subj_raw / "vo2_labels.csv").exists() else subj_raw / "vo2_labels.npy"
+    co_file = (
+        subj_raw / "co_labels.csv"
+        if (subj_raw / "co_labels.csv").exists()
+        else subj_raw / "co_labels.npy"
+    )
+    vo2_file = (
+        subj_raw / "vo2_labels.csv"
+        if (subj_raw / "vo2_labels.csv").exists()
+        else subj_raw / "vo2_labels.npy"
+    )
 
     if co_file.exists():
         co_data = _load_label_file(co_file)
@@ -189,7 +209,9 @@ def _load_labels(subj_raw: Path, n_windows: int) -> tuple[np.ndarray, np.ndarray
     co_data = _match_label_length(co_data, n_windows)
     vo2_data = _match_label_length(vo2_data, n_windows)
 
-    return co_data.reshape(-1, 1).astype(np.float32), vo2_data.reshape(-1, 1).astype(np.float32)
+    return co_data.reshape(-1, 1).astype(np.float32), vo2_data.reshape(-1, 1).astype(
+        np.float32
+    )
 
 
 def _match_label_length(data: np.ndarray, target_len: int) -> np.ndarray:

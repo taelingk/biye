@@ -36,11 +36,13 @@ class Standardize1D(Layer):
 
     def get_config(self):
         cfg = super().get_config()
-        cfg.update({
-            "mean": self.mean.reshape(-1).tolist(),
-            "scale": self.scale.reshape(-1).tolist(),
-            "eps": self.eps,
-        })
+        cfg.update(
+            {
+                "mean": self.mean.reshape(-1).tolist(),
+                "scale": self.scale.reshape(-1).tolist(),
+                "eps": self.eps,
+            }
+        )
         return cfg
 
 
@@ -53,9 +55,17 @@ class StandardizeSignalFlat(Layer):
     Our window_size=125, channels=3 → flattens to (B, 375).
     """
 
-    def __init__(self, mean, scale, window_size: int = 125, channels: int = 3, eps: float = 1e-8, **kwargs):
+    def __init__(
+        self,
+        mean,
+        scale,
+        window_size: int = 125,
+        channels: int = 3,
+        eps: float = 1e-8,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
-        self.mean = np.array(mean, dtype=np.float32).reshape(1, -1)    # (1, 375)
+        self.mean = np.array(mean, dtype=np.float32).reshape(1, -1)  # (1, 375)
         self.scale = np.array(scale, dtype=np.float32).reshape(1, -1)  # (1, 375)
         self.window_size = int(window_size)
         self.channels = int(channels)
@@ -70,11 +80,13 @@ class StandardizeSignalFlat(Layer):
 
     def get_config(self):
         cfg = super().get_config()
-        cfg.update({
-            "window_size": self.window_size,
-            "channels": self.channels,
-            "eps": self.eps,
-        })
+        cfg.update(
+            {
+                "window_size": self.window_size,
+                "channels": self.channels,
+                "eps": self.eps,
+            }
+        )
         return cfg
 
 
@@ -100,9 +112,11 @@ class StandardizeClinical(Layer):
 
     def get_config(self):
         cfg = super().get_config()
-        cfg.update({
-            "mean": self.mean.reshape(-1).tolist(),
-            "scale": self.scale.reshape(-1).tolist(),
-            "eps": self.eps,
-        })
+        cfg.update(
+            {
+                "mean": self.mean.reshape(-1).tolist(),
+                "scale": self.scale.reshape(-1).tolist(),
+                "eps": self.eps,
+            }
+        )
         return cfg
