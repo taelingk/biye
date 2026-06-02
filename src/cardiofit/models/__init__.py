@@ -8,8 +8,8 @@ Interface contracts:
     compile_model(model, lr=0.001, clipvalue=1.0) -> keras.Model
 """
 
-from .resnet_se_lstm import build_multimodal_resnet_se_lstm, compile_model
 from .loading import load_multimodal_checkpoint
+from .resnet_se_lstm import build_multimodal_resnet_se_lstm, compile_model
 from .se_block import ResidualSEBlock, SEBlock
 from .standardize_layers import (
     Standardize1D,
