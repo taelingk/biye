@@ -174,24 +174,39 @@ def _load_labels(subj_raw: Path, n_windows: int) -> tuple[np.ndarray, np.ndarray
     vo2_file = subj_raw / "vo2_labels.csv" if (subj_raw / "vo2_labels.csv").exists() else subj_raw / "vo2_labels.npy"
 
     if co_file.exists():
-        co_data = np.loadtxt(str(co_file), delimiter=",", dtype=np.float32).squeeze()
+        co_data = _load_label_file(co_file)
     else:
         logger.warning(f"No CO labels for {subj_raw.name}, using zeros")
         co_data = np.zeros(n_windows, dtype=np.float32)
 
     if vo2_file.exists():
-        vo2_data = np.loadtxt(str(vo2_file), delimiter=",", dtype=np.float32).squeeze()
+        vo2_data = _load_label_file(vo2_file)
     else:
         logger.warning(f"No VO2 labels for {subj_raw.name}, using zeros")
         vo2_data = np.zeros(n_windows, dtype=np.float32)
 
-    # Interpolate to window count if length mismatch
-    if co_data.ndim == 1 and len(co_data) != n_windows:
-        co_data = _interp_to_length(co_data, n_windows)
-    if vo2_data.ndim == 1 and len(vo2_data) != n_windows:
-        vo2_data = _interp_to_length(vo2_data, n_windows)
+    # Interpolate or broadcast to window count if length mismatch
+    co_data = _match_label_length(co_data, n_windows)
+    vo2_data = _match_label_length(vo2_data, n_windows)
 
     return co_data.reshape(-1, 1).astype(np.float32), vo2_data.reshape(-1, 1).astype(np.float32)
+
+
+def _match_label_length(data: np.ndarray, target_len: int) -> np.ndarray:
+    """Broadcast scalar labels or interpolate time series to the window count."""
+    data = np.asarray(data, dtype=np.float32)
+    if data.ndim == 0:
+        return np.full(target_len, float(data), dtype=np.float32)
+    if len(data) != target_len:
+        return _interp_to_length(data, target_len)
+    return data
+
+
+def _load_label_file(path: Path) -> np.ndarray:
+    """Load label arrays from CSV text or NPY binary files."""
+    if path.suffix == ".npy":
+        return np.load(str(path)).astype(np.float32).squeeze()
+    return np.loadtxt(str(path), delimiter=",", dtype=np.float32).squeeze()
 
 
 def _interp_to_length(data: np.ndarray, target_len: int) -> np.ndarray:
