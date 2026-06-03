@@ -80,7 +80,7 @@ Run these on Windows 5090D, one at a time. Each config writes to a separate outp
 ```bash
 python scripts/train_multimodal.py --config configs/experiment/phase10_co_regularized.yaml
 python scripts/evaluate_multimodal.py --config configs/experiment/phase10_co_regularized.yaml --checkpoint outputs/phase10_regularized/checkpoints/best_model.keras --output-dir outputs/phase10_regularized/evaluation
-python scripts/export_onnx.py --checkpoint outputs/phase10_regularized/checkpoints/best_model.keras --output outputs/phase10_regularized/onnx/scg_rhc_multimodal.onnx
+python scripts/export_onnx.py --config configs/experiment/phase10_co_regularized.yaml --checkpoint outputs/phase10_regularized/checkpoints/best_model.keras --output outputs/phase10_regularized/onnx/scg_rhc_multimodal.onnx
 ```
 
 Purpose: reduce overfitting with stronger dropout, stronger L2, lower capacity, and shorter patience.
@@ -90,7 +90,7 @@ Purpose: reduce overfitting with stronger dropout, stronger L2, lower capacity, 
 ```bash
 python scripts/train_multimodal.py --config configs/experiment/phase10_co_low_lr.yaml
 python scripts/evaluate_multimodal.py --config configs/experiment/phase10_co_low_lr.yaml --checkpoint outputs/phase10_low_lr/checkpoints/best_model.keras --output-dir outputs/phase10_low_lr/evaluation
-python scripts/export_onnx.py --checkpoint outputs/phase10_low_lr/checkpoints/best_model.keras --output outputs/phase10_low_lr/onnx/scg_rhc_multimodal.onnx
+python scripts/export_onnx.py --config configs/experiment/phase10_co_low_lr.yaml --checkpoint outputs/phase10_low_lr/checkpoints/best_model.keras --output outputs/phase10_low_lr/onnx/scg_rhc_multimodal.onnx
 ```
 
 Purpose: test whether the validation instability is from too-large early updates.
@@ -100,7 +100,7 @@ Purpose: test whether the validation instability is from too-large early updates
 ```bash
 python scripts/train_multimodal.py --config configs/experiment/phase10_co_no_aug.yaml
 python scripts/evaluate_multimodal.py --config configs/experiment/phase10_co_no_aug.yaml --checkpoint outputs/phase10_no_aug/checkpoints/best_model.keras --output-dir outputs/phase10_no_aug/evaluation
-python scripts/export_onnx.py --checkpoint outputs/phase10_no_aug/checkpoints/best_model.keras --output outputs/phase10_no_aug/onnx/scg_rhc_multimodal.onnx
+python scripts/export_onnx.py --config configs/experiment/phase10_co_no_aug.yaml --checkpoint outputs/phase10_no_aug/checkpoints/best_model.keras --output outputs/phase10_no_aug/onnx/scg_rhc_multimodal.onnx
 ```
 
 Purpose: test whether current time-shift/noise augmentation helps or hurts SCG-RHC generalization.
@@ -144,3 +144,38 @@ CO metrics.json:
 checkpoint path:
 notes/errors:
 ```
+
+## Windows 5090D Phase 10 Results
+
+Run date: 2026-06-03
+
+Artifacts were packaged with:
+
+```bash
+python scripts/package_phase9_artifacts.py pack --output phase10_artifacts.zip
+```
+
+Packaged file:
+
+- `phase10_artifacts.zip`
+- Size: 267,700,013 bytes
+- Contains 58 files, including Phase 9 artifacts and all three `outputs/phase10_*` directories.
+
+| Config | Best epoch | Best val_loss | CO R2 | CO Pearson r | CO MAE | CO RMSE | CO bias |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `phase10_co_regularized.yaml` | 19 | 0.601342 | 0.400239 | 0.676925 | 0.764394 | 1.156466 | -0.320461 |
+| `phase10_co_low_lr.yaml` | 29 | 0.686003 | 0.363455 | 0.723552 | 0.898999 | 1.191402 | -0.592827 |
+| `phase10_co_no_aug.yaml` | 5 | 0.557344 | 0.287423 | 0.702523 | 0.981881 | 1.260548 | -0.594512 |
+
+Checkpoints:
+
+- `outputs/phase10_regularized/checkpoints/best_model.keras`
+- `outputs/phase10_low_lr/checkpoints/best_model.keras`
+- `outputs/phase10_no_aug/checkpoints/best_model.keras`
+
+Notes:
+
+- All three experiments completed training, evaluation, and ONNX export verification.
+- None of the Phase 10 runs improved the Phase 9 primary criterion, CO RMSE below 1.019 L/min.
+- The regularized run slightly improved CO MAE versus Phase 9 (`0.764394` vs `0.767`), but underperformed Phase 9 on RMSE, R2, Pearson r, and bias.
+- ONNX export for Phase 10 configs must pass the matching `--config` because model capacity differs from `configs/default.yaml`.
