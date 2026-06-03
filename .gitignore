@@ -41,6 +41,7 @@ runs/
 checkpoints/
 outputs/
 phase9_artifacts.zip
+phase10_artifacts.zip
 wandb/
 figures/
 logs/
