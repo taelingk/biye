@@ -145,3 +145,19 @@ tasks:
       - outputs/
       - PHASE10_TUNING_ANALYSIS.md
     note: Windows 5090D ran regularized, low-lr, and no-augmentation Phase 10 experiments. All runs completed evaluation and ONNX export; artifacts packaged as phase10_artifacts.zip. No run beat Phase 9 CO RMSE.
+
+  - id: phase11-diagnostics
+    phase: 11
+    name: Error and subject distribution diagnostics
+    status: done
+    handler: codex
+    branch: main
+    started: 2026-06-03
+    completed: 2026-06-03
+    depends_on: phase10-optimize
+    files_touched:
+      - scripts/diagnose_phase11_errors.py
+      - tests/test_phase11_diagnostics.py
+      - PHASE11_ERROR_DIAGNOSTICS.md
+      - outputs/phase11_diagnostics/
+    note: Inference-only diagnostics compared Phase 9 and Phase 10 checkpoints. Phase 9 remains best by test RMSE; TRM267-RHC1 dominates error mass and Phase 10 increases negative bias.
