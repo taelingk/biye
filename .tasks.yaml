@@ -161,3 +161,19 @@ tasks:
       - PHASE11_ERROR_DIAGNOSTICS.md
       - outputs/phase11_diagnostics/
     note: Inference-only diagnostics compared Phase 9 and Phase 10 checkpoints. Phase 9 remains best by test RMSE; TRM267-RHC1 dominates error mass and Phase 10 increases negative bias.
+
+  - id: phase12-bias-correction
+    phase: 12
+    name: Validation-fitted CO bias correction
+    status: done
+    handler: codex
+    branch: main
+    started: 2026-06-03
+    completed: 2026-06-03
+    depends_on: phase11-diagnostics
+    files_touched:
+      - scripts/evaluate_phase12_bias_correction.py
+      - tests/test_phase12_bias_correction.py
+      - PHASE12_BIAS_CORRECTION.md
+      - outputs/phase12_bias_correction/
+    note: Inference-only scalar bias correction improved Phase 9 baseline test RMSE from 1.018769 to 1.008770 and nearly removed global bias. Phase 10 variants did not benefit consistently.
