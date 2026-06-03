@@ -1,7 +1,7 @@
 # Dependencies needed by GitHub Actions lint/test jobs.
 # Keep this focused so CI does not install heavyweight training-only packages.
 
-tensorflow>=2.16,<2.22
+tensorflow-cpu==2.16.2
 
 numpy>=1.24
 pandas>=2.0
